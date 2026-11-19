@@ -37,9 +37,9 @@ sense.
 
 Kanvas is in early development. **M0 is live**, and the local workspace already supports a few pieces that
 used to be on later milestones: board search, duplicate, JSON import/export with undoable delete, a toast
-system, an error boundary, and offline use as a PWA. **M2 nodes are live too**: sticky notes, text, task cards, shapes, frames and images with inline editing,
-resize and rotate, a style panel and a right-click context menu. Selection, history and connectors are
-the next milestones — see [ROADMAP.md](ROADMAP.md) for what is coming.
+system, an error boundary, and offline use as a PWA. **M3 selection and history are live too**: shift-click, marquee selection, select-all, group move, align and
+distribute, copy/paste/duplicate/delete, and undo/redo with a 50-step history. Connectors and ink are the
+next milestones — see [ROADMAP.md](ROADMAP.md) for what is coming.
 
 ![Empty board in dark mode](docs/screenshot-board.png)
 

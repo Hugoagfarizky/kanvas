@@ -29,8 +29,8 @@ akal.
 
 Kanvas masih tahap awal. **M0 selesai**, dan ruang kerja lokal sudah mendukung beberapa fitur yang
 sebelumnya direncanakan di milestone berikutnya: pencarian board, duplikasi, import/export JSON
-dengan undo hapus, sistem toast, error boundary, dan penggunaan offline sebagai PWA. **M2 node juga sudah jalan**: sticky note, text, task card, shape, frame, dan image dengan editing
-inline, resize dan rotate, panel gaya, serta menu konteks klik kanan. Seleksi, riwayat, dan konektor
+dengan undo hapus, sistem toast, error boundary, dan penggunaan offline sebagai PWA. **M3 seleksi dan riwayat juga sudah jalan**: shift-click, seleksi marquee, select-all, pindah grup,
+align dan distribute, copy/paste/duplicate/delete, serta undo/redo 50 langkah. Konektor dan ink
 adalah milestone berikutnya — lihat [ROADMAP.md](ROADMAP.md).
 
 ![Board kosong dalam mode gelap](docs/screenshot-board.png)

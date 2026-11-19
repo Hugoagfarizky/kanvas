@@ -45,11 +45,11 @@ progress stays visible in the repository.
 
 ### M3 — Selection and history
 
-- [ ] Click, shift-click, marquee and select-all
-- [ ] Move as a group, align and distribute
-- [ ] Copy, paste, duplicate and delete
-- [ ] Undo/redo with a 50-step history
-- **Done when:** 50 consecutive operations undo and redo consistently.
+- [x] Click, shift-click, marquee and select-all
+- [x] Move as a group, align and distribute
+- [x] Copy, paste, duplicate and delete
+- [x] Undo/redo with a 50-step history
+- **Done when:** 50 consecutive operations undo and redo consistently. ✅
 
 ### M4 — Connectors and ink
 

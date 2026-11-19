@@ -4,6 +4,7 @@ import { NodeResizer, useReactFlow, type NodeProps } from "@xyflow/react"
 
 import type { NodeStyle, NodeType, Size, TaskItem } from "@/types/board"
 import { cn } from "@/lib/utils"
+import { useHistoryPush } from "@/components/history-context"
 
 type KanvasNodeData = {
   kind: NodeType
@@ -15,10 +16,14 @@ type KanvasNodeData = {
 
 function useNodeUpdater(id: string) {
   const { setNodes } = useReactFlow()
+  const pushHistory = useHistoryPush()
 
   return (patch: Partial<KanvasNodeData>) => {
+    pushHistory?.()
     setNodes((nodes) =>
-      nodes.map((node) => (node.id === id ? { ...node, data: { ...node.data, ...patch } } : node)),
+      nodes.map((node) =>
+        node.id === id ? { ...node, data: { ...(node.data as any), ...patch } } : node,
+      ),
     )
   }
 }

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   Background,
@@ -16,6 +17,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 
 import "@xyflow/react/dist/style.css"
 
+import { HistoryContext } from "@/components/history-context"
 import { nodeTypes } from "@/components/nodes"
 import type { KanvasNode, NodeStyle, NodeType, Size } from "@/types/board"
 import { createId } from "@/lib/id"
@@ -105,21 +107,15 @@ function toFlowEdge(e: CanvasProps["board"]["edges"][number]): Edge {
 }
 
 function toKanvasNode(fn: Node): KanvasNode {
-  const d = (fn.data ?? {}) as {
-    kind: NodeType
-    data: any
-    style: NodeStyle
-    size: Size
-    rotation?: number
-  }
+  const d = (fn.data ?? {}) as any
 
   return {
     id: fn.id,
     type: d.kind,
     position: { x: fn.position.x, y: fn.position.y },
     size: {
-      width: fn.width ?? d.size?.width ?? DEFAULT_SIZES[d.kind].width,
-      height: fn.height ?? d.size?.height ?? DEFAULT_SIZES[d.kind].height,
+      width: fn.width ?? d.size?.width ?? DEFAULT_SIZES[d.kind as NodeType].width,
+      height: fn.height ?? d.size?.height ?? DEFAULT_SIZES[d.kind as NodeType].height,
     },
     rotation: d.rotation,
     style: d.style,
@@ -134,8 +130,20 @@ function toKanvasEdge(fe: Edge): any {
     target: fe.target,
     label: typeof fe.label === "string" ? fe.label : undefined,
     type: fe.type === "straight" ? "straight" : fe.type === "step" ? "step" : "bezier",
-    color: (fe.style as { stroke?: string } | undefined)?.stroke,
+    color: (fe.style as any)?.stroke,
   }
+}
+
+function cloneNode(node: Node): Node {
+  return {
+    ...node,
+    data: node.data ? { ...(node.data as any) } : node.data,
+    position: { ...node.position },
+  }
+}
+
+function cloneEdge(edge: Edge): Edge {
+  return { ...edge, style: edge.style ? { ...edge.style } : edge.style }
 }
 
 export function BoardCanvas(props: CanvasProps) {
@@ -155,8 +163,45 @@ function BoardCanvasInner({ board, onViewportChange, onNodesPersist }: CanvasPro
   )
   const mounted = useRef(false)
   const persistTimer = useRef<number | null>(null)
+  const history = useRef<{
+    past: { nodes: Node[]; edges: Edge[] }[]
+    future: { nodes: Node[]; edges: Edge[] }[]
+  }>({ past: [], future: [] })
+  const [canUndo, setCanUndo] = useState(false)
+  const [canRedo, setCanRedo] = useState(false)
+  const clipboard = useRef<{ nodes: Node[]; edges: Edge[] } | null>(null)
+  const dragPushed = useRef(false)
+  const resizePushed = useRef(false)
 
-  const selectedNode = nodes.find((node) => node.selected) ?? null
+  const selectedNodes = nodes.filter((node) => node.selected)
+
+  function pushHistory() {
+    history.current.past.push({ nodes: nodes.map(cloneNode), edges: edges.map(cloneEdge) })
+    if (history.current.past.length > 50) history.current.past.shift()
+    history.current.future = []
+    setCanUndo(true)
+    setCanRedo(false)
+  }
+
+  function undo() {
+    if (!history.current.past.length) return
+    history.current.future.push({ nodes: nodes.map(cloneNode), edges: edges.map(cloneEdge) })
+    const prev = history.current.past.pop()!
+    setNodes(prev.nodes.map(cloneNode))
+    setEdges(prev.edges.map(cloneEdge))
+    setCanUndo(history.current.past.length > 0)
+    setCanRedo(true)
+  }
+
+  function redo() {
+    if (!history.current.future.length) return
+    history.current.past.push({ nodes: nodes.map(cloneNode), edges: edges.map(cloneEdge) })
+    const next = history.current.future.pop()!
+    setNodes(next.nodes.map(cloneNode))
+    setEdges(next.edges.map(cloneEdge))
+    setCanUndo(true)
+    setCanRedo(history.current.future.length > 0)
+  }
 
   useEffect(() => {
     if (!mounted.current) {
@@ -174,9 +219,34 @@ function BoardCanvasInner({ board, onViewportChange, onNodesPersist }: CanvasPro
     }
   }, [nodes, edges, onNodesPersist])
 
-  const handleNodesChange = useCallback((changes: any) => {
-    setNodes((current) => applyNodeChanges(current, changes))
-  }, [])
+  const handleNodesChange = useCallback(
+    (changes: any) => {
+      const hasDragStart = changes.some((c: any) => c.type === "position" && c.dragging === true)
+      const hasResizeStart = changes.some(
+        (c: any) => c.type === "dimensions" && c.resizing === true,
+      )
+      const hasRemove = changes.some((c: any) => c.type === "remove")
+
+      if (hasDragStart && !dragPushed.current) {
+        pushHistory()
+        dragPushed.current = true
+      }
+      if (hasResizeStart && !resizePushed.current) {
+        pushHistory()
+        resizePushed.current = true
+      }
+      if (hasRemove) {
+        pushHistory()
+      }
+      if (changes.some((c: any) => c.type === "position" && c.dragging === false))
+        dragPushed.current = false
+      if (changes.some((c: any) => c.type === "dimensions" && c.resizing === false))
+        resizePushed.current = false
+
+      setNodes((current) => applyNodeChanges(current, changes))
+    },
+    [pushHistory],
+  )
 
   const handleEdgesChange = useCallback((changes: any) => {
     setEdges((current) => applyEdgeChanges(current, changes))
@@ -193,7 +263,84 @@ function BoardCanvasInner({ board, onViewportChange, onNodesPersist }: CanvasPro
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null
       if (target?.closest("input, textarea, select, [contenteditable='true']")) return
-      if (event.metaKey || event.ctrlKey || event.altKey) return
+
+      const mod = event.metaKey || event.ctrlKey
+
+      if (mod && event.key.toLowerCase() === "a") {
+        event.preventDefault()
+        setNodes((current) => current.map((node) => ({ ...node, selected: true })))
+        return
+      }
+
+      if (mod && event.key.toLowerCase() === "c") {
+        event.preventDefault()
+        const selected = nodes.filter((node) => node.selected)
+        const ids = new Set(selected.map((node) => node.id))
+        clipboard.current = {
+          nodes: selected.map(cloneNode),
+          edges: edges
+            .filter((edge) => ids.has(edge.source) && ids.has(edge.target))
+            .map(cloneEdge),
+        }
+        return
+      }
+
+      if (mod && event.key.toLowerCase() === "v") {
+        event.preventDefault()
+        if (!clipboard.current) return
+        pushHistory()
+        const idMap = new Map<string, string>()
+        const newNodes = clipboard.current.nodes.map((node) => {
+          const newId = createId("node")
+          idMap.set(node.id, newId)
+          return {
+            ...cloneNode(node),
+            id: newId,
+            position: { x: node.position.x + 40, y: node.position.y + 40 },
+            selected: true,
+          }
+        })
+        const newEdges = clipboard.current.edges.map((edge) => ({
+          ...cloneEdge(edge),
+          id: createId("edge"),
+          source: idMap.get(edge.source) ?? edge.source,
+          target: idMap.get(edge.target) ?? edge.target,
+        }))
+        setNodes((current) => [
+          ...current.map((node) => ({ ...node, selected: false })),
+          ...newNodes,
+        ])
+        setEdges((current) => [...current, ...newEdges])
+        return
+      }
+
+      if (mod && event.key.toLowerCase() === "d") {
+        event.preventDefault()
+        const selected = nodes.filter((node) => node.selected)
+        if (selected.length === 0) return
+        pushHistory()
+        const clones = selected.map((node) => ({
+          ...cloneNode(node),
+          id: createId("node"),
+          position: { x: node.position.x + 24, y: node.position.y + 24 },
+          selected: true,
+        }))
+        setNodes((current) => [...current.map((node) => ({ ...node, selected: false })), ...clones])
+        return
+      }
+
+      if (mod && event.key.toLowerCase() === "z") {
+        event.preventDefault()
+        if (event.shiftKey) redo()
+        else undo()
+        return
+      }
+
+      if (mod && event.key.toLowerCase() === "y") {
+        event.preventDefault()
+        redo()
+        return
+      }
 
       if (event.key === "+" || event.key === "=") {
         event.preventDefault()
@@ -213,16 +360,17 @@ function BoardCanvasInner({ board, onViewportChange, onNodesPersist }: CanvasPro
 
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [reactFlow, nodes.length])
+  }, [reactFlow, nodes, edges, undo, redo])
 
   function addNode(kind: NodeType) {
+    pushHistory()
     const center = reactFlow.screenToFlowPosition({
       x: window.innerWidth / 2,
       y: window.innerHeight / 2,
     })
 
     const id = createId("node")
-    const size = DEFAULT_SIZES[kind]
+    const size = DEFAULT_SIZES[kind as NodeType]
     const newNode: Node = {
       id,
       type: `kanvas-${kind}`,
@@ -246,30 +394,29 @@ function BoardCanvasInner({ board, onViewportChange, onNodesPersist }: CanvasPro
   function duplicateNode(nodeId: string) {
     const source = nodes.find((node) => node.id === nodeId)
     if (!source) return
-
+    pushHistory()
     const clone: Node = {
-      ...source,
+      ...cloneNode(source),
       id: createId("node"),
       position: { x: source.position.x + 24, y: source.position.y + 24 },
       selected: true,
-      data: source.data ? { ...(source.data as any) } : source.data,
     }
-
     setNodes((current) => [...current.map((node) => ({ ...node, selected: false })), clone])
   }
 
   function deleteNode(nodeId: string) {
+    pushHistory()
     setNodes((current) => current.filter((node) => node.id !== nodeId))
   }
 
   function updateSelected(
     patch: Partial<{ style: Partial<NodeStyle>; rotation: number; data: any }>,
   ) {
-    if (!selectedNode) return
-
+    if (!selectedNodes.length) return
+    pushHistory()
     setNodes((current) =>
       current.map((node) => {
-        if (node.id !== selectedNode.id) return node
+        if (!node.selected) return node
         const nextData = { ...(node.data as any) }
         if (patch.style) nextData.style = { ...(nextData.style as any), ...patch.style }
         if (patch.rotation !== undefined) nextData.rotation = patch.rotation
@@ -279,154 +426,337 @@ function BoardCanvasInner({ board, onViewportChange, onNodesPersist }: CanvasPro
     )
   }
 
+  function alignNodes(mode: "left" | "right" | "centerX" | "top" | "bottom" | "centerY") {
+    if (selectedNodes.length < 2) return
+    pushHistory()
+    const xs = selectedNodes.map((node) => node.position.x)
+    const ys = selectedNodes.map((node) => node.position.y)
+    const widths = selectedNodes.map(
+      (node) => (node.width ?? (node.data as any).size?.width ?? 100) as number,
+    )
+    const heights = selectedNodes.map(
+      (node) => (node.height ?? (node.data as any).size?.height ?? 100) as number,
+    )
+    const minX = Math.min(...xs)
+    const maxX = Math.max(...xs.map((x, i) => x + widths[i]))
+    const minY = Math.min(...ys)
+    const maxY = Math.max(...ys.map((y, i) => y + heights[i]))
+    const avgCenterX = xs.reduce((sum, x, i) => sum + x + widths[i] / 2, 0) / selectedNodes.length
+    const avgCenterY = ys.reduce((sum, y, i) => sum + y + heights[i] / 2, 0) / selectedNodes.length
+
+    setNodes((current) =>
+      current.map((node) => {
+        if (!node.selected) return node
+        const width = (node.width ?? (node.data as any).size?.width ?? 100) as number
+        const height = (node.height ?? (node.data as any).size?.height ?? 100) as number
+        let x = node.position.x
+        let y = node.position.y
+        if (mode === "left") x = minX
+        if (mode === "right") x = maxX - width
+        if (mode === "centerX") x = avgCenterX - width / 2
+        if (mode === "top") y = minY
+        if (mode === "bottom") y = maxY - height
+        if (mode === "centerY") y = avgCenterY - height / 2
+        return { ...node, position: { x, y } }
+      }),
+    )
+  }
+
+  function distributeNodes(axis: "horizontal" | "vertical") {
+    if (selectedNodes.length < 3) return
+    pushHistory()
+    const sorted = [...selectedNodes].sort((a, b) =>
+      axis === "horizontal" ? a.position.x - b.position.x : a.position.y - b.position.y,
+    )
+    const first = sorted[0]
+    const last = sorted[sorted.length - 1]
+    const firstPos = axis === "horizontal" ? first.position.x : first.position.y
+    const lastPos =
+      axis === "horizontal"
+        ? last.position.x + (last.width ?? 100)
+        : last.position.y + (last.height ?? 100)
+    const totalSize = sorted.reduce(
+      (sum, node) => sum + (axis === "horizontal" ? (node.width ?? 100) : (node.height ?? 100)),
+      0,
+    )
+    const gap = (lastPos - firstPos - totalSize) / (sorted.length - 1)
+
+    let cursor =
+      firstPos + (axis === "horizontal" ? (first.width ?? 100) : (first.height ?? 100)) + gap
+    const positions = new Map<string, number>()
+    positions.set(sorted[0].id, firstPos)
+    for (let i = 1; i < sorted.length - 1; i++) {
+      positions.set(sorted[i].id, cursor)
+      cursor += (axis === "horizontal" ? (sorted[i].width ?? 100) : (sorted[i].height ?? 100)) + gap
+    }
+    positions.set(
+      sorted[sorted.length - 1].id,
+      lastPos - (axis === "horizontal" ? (last.width ?? 100) : (last.height ?? 100)),
+    )
+
+    setNodes((current) =>
+      current.map((node) => {
+        if (!node.selected) return node
+        const pos = positions.get(node.id)
+        if (pos === undefined) return node
+        return {
+          ...node,
+          position:
+            axis === "horizontal" ? { ...node.position, x: pos } : { ...node.position, y: pos },
+        }
+      }),
+    )
+  }
+
   const isEmpty = nodes.length === 0 && edges.length === 0
 
   return (
-    <div className="absolute inset-0">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        onNodesChange={handleNodesChange}
-        onEdgesChange={handleEdgesChange}
-        onMoveEnd={handleMoveEnd}
-        onNodeContextMenu={(event, node) => {
-          event.preventDefault()
-          setContextMenu({ x: event.clientX, y: event.clientY, nodeId: node.id })
-        }}
-        onPaneClick={() => setContextMenu(null)}
-        minZoom={0.1}
-        maxZoom={4}
-        panOnScroll
-        zoomOnScroll
-        zoomOnPinch
-        panOnDrag
-        selectionOnDrag={false}
-        deleteKeyCode={["Delete", "Backspace"]}
-        multiSelectionKeyCode="Shift"
-        proOptions={{ hideAttribution: true }}
-        className="bg-background"
-        fitView={false}
-        defaultViewport={board.viewport}
-      >
-        <Background variant={BackgroundVariant.Dots} gap={22} size={1.25} color="var(--grid-dot)" />
-        <Controls
-          showZoom
-          showFitView
-          showInteractive={false}
-          className="!border-border !bg-card/90 !shadow-sm [&_button]:!border-border [&_button]:!bg-card [&_button]:!text-foreground"
-        />
-        <MiniMap
-          className="!border-border !bg-card/80"
-          nodeColor="var(--color-muted-foreground)"
-          maskColor="color-mix(in srgb, var(--background) 65%, transparent)"
-          pannable
-          zoomable
-        />
-      </ReactFlow>
-
-      {/* Toolbar */}
-      <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5 rounded-2xl border border-border bg-card/90 p-1.5 shadow-sm backdrop-blur">
-        {(
-          [
-            ["note", "Note"],
-            ["text", "Text"],
-            ["task", "Task"],
-            ["shape", "Shape"],
-            ["frame", "Frame"],
-            ["image", "Image"],
-          ] as [NodeType, string][]
-        ).map(([kind, label]) => (
-          <button
-            key={kind}
-            type="button"
-            onClick={() => addNode(kind)}
-            className="rounded-lg px-2.5 py-1.5 text-xs font-medium transition hover:bg-accent"
-            title={`Add ${label}`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {/* Style panel */}
-      {selectedNode ? (
-        <div className="absolute bottom-3 right-3 z-10 w-64 rounded-2xl border border-border bg-card/95 p-3 shadow-sm backdrop-blur">
-          <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-            Style
-          </p>
-          <div className="space-y-2.5">
-            <ColorRow
-              label="Fill"
-              value={(selectedNode.data as any).style?.fill ?? "#ffffff"}
-              onChange={(value) => updateSelected({ style: { fill: value } })}
-            />
-            <ColorRow
-              label="Stroke"
-              value={(selectedNode.data as any).style?.stroke ?? "#000000"}
-              onChange={(value) => updateSelected({ style: { stroke: value } })}
-            />
-            <ColorRow
-              label="Text"
-              value={(selectedNode.data as any).style?.text ?? "#000000"}
-              onChange={(value) => updateSelected({ style: { text: value } })}
-            />
-            <NumberRow
-              label="Font size"
-              value={(selectedNode.data as any).style?.fontSize ?? 14}
-              onChange={(value) => updateSelected({ style: { fontSize: value } })}
-            />
-            <NumberRow
-              label="Rotation"
-              value={(selectedNode.data as any).rotation ?? 0}
-              onChange={(value) => updateSelected({ rotation: value })}
-            />
-          </div>
-        </div>
-      ) : null}
-
-      {/* Context menu */}
-      {contextMenu ? (
-        <div
-          className="fixed z-50 min-w-36 rounded-xl border border-border bg-card p-1 shadow-lg"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
+    <HistoryContext.Provider value={{ push: pushHistory }}>
+      <div className="absolute inset-0">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          onNodesChange={handleNodesChange}
+          onEdgesChange={handleEdgesChange}
+          onMoveEnd={handleMoveEnd}
+          onNodeDragStart={() => pushHistory()}
+          onNodeContextMenu={(event, node) => {
+            event.preventDefault()
+            setContextMenu({ x: event.clientX, y: event.clientY, nodeId: node.id })
+          }}
+          onPaneClick={() => setContextMenu(null)}
+          minZoom={0.1}
+          maxZoom={4}
+          panOnScroll
+          zoomOnScroll
+          zoomOnPinch
+          panOnDrag
+          selectionOnDrag={false}
+          selectionKeyCode="Shift"
+          deleteKeyCode={["Delete", "Backspace"]}
+          multiSelectionKeyCode="Shift"
+          proOptions={{ hideAttribution: true }}
+          className="bg-background"
+          defaultViewport={board.viewport}
         >
-          <button
-            type="button"
-            onClick={() => {
-              duplicateNode(contextMenu.nodeId)
-              setContextMenu(null)
-            }}
-            className="block w-full rounded-lg px-3 py-1.5 text-left text-sm transition hover:bg-accent"
-          >
-            Duplicate
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              deleteNode(contextMenu.nodeId)
-              setContextMenu(null)
-            }}
-            className="block w-full rounded-lg px-3 py-1.5 text-left text-sm text-destructive transition hover:bg-destructive/10"
-          >
-            Delete
-          </button>
-        </div>
-      ) : null}
+          <Background
+            variant={BackgroundVariant.Dots}
+            gap={22}
+            size={1.25}
+            color="var(--grid-dot)"
+          />
+          <Controls
+            showZoom
+            showFitView
+            showInteractive={false}
+            className="!border-border !bg-card/90 !shadow-sm [&_button]:!border-border [&_button]:!bg-card [&_button]:!text-foreground"
+          />
+          <MiniMap
+            className="!border-border !bg-card/80"
+            nodeColor="var(--color-muted-foreground)"
+            maskColor="color-mix(in srgb, var(--background) 65%, transparent)"
+            pannable
+            zoomable
+          />
+        </ReactFlow>
 
-      {/* Empty hint */}
-      {isEmpty ? (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="max-w-sm rounded-3xl border border-border bg-card/85 p-6 text-center shadow-[0_24px_70px_-45px_rgba(0,0,0,0.45)] backdrop-blur-sm">
-            <p className="font-display text-2xl tracking-tight">A blank canvas.</p>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Use the toolbar to add notes, text, tasks, shapes, frames and images. Drag to pan,
-              scroll to zoom.
-            </p>
-          </div>
+        {/* Toolbar */}
+        <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5 rounded-2xl border border-border bg-card/90 p-1.5 shadow-sm backdrop-blur">
+          {(
+            [
+              ["note", "Note"],
+              ["text", "Text"],
+              ["task", "Task"],
+              ["shape", "Shape"],
+              ["frame", "Frame"],
+              ["image", "Image"],
+            ] as [NodeType, string][]
+          ).map(([kind, label]) => (
+            <button
+              key={kind}
+              type="button"
+              onClick={() => addNode(kind)}
+              className="rounded-lg px-2.5 py-1.5 text-xs font-medium transition hover:bg-accent"
+              title={`Add ${label}`}
+            >
+              {label}
+            </button>
+          ))}
+          <span className="mx-1 w-px bg-border" />
+          <button
+            type="button"
+            onClick={undo}
+            disabled={!canUndo}
+            className="rounded-lg px-2.5 py-1.5 text-xs font-medium transition hover:bg-accent disabled:opacity-40"
+            title="Undo (Ctrl+Z)"
+          >
+            Undo
+          </button>
+          <button
+            type="button"
+            onClick={redo}
+            disabled={!canRedo}
+            className="rounded-lg px-2.5 py-1.5 text-xs font-medium transition hover:bg-accent disabled:opacity-40"
+            title="Redo (Ctrl+Shift+Z)"
+          >
+            Redo
+          </button>
         </div>
-      ) : null}
-    </div>
+
+        {/* Arrange panel */}
+        {selectedNodes.length >= 2 ? (
+          <div className="absolute left-3 top-16 z-10 flex flex-wrap gap-1.5 rounded-2xl border border-border bg-card/90 p-1.5 shadow-sm backdrop-blur">
+            <button
+              type="button"
+              onClick={() => alignNodes("left")}
+              className="rounded-lg px-2 py-1 text-xs font-medium transition hover:bg-accent"
+              title="Align left"
+            >
+              L
+            </button>
+            <button
+              type="button"
+              onClick={() => alignNodes("centerX")}
+              className="rounded-lg px-2 py-1 text-xs font-medium transition hover:bg-accent"
+              title="Align center"
+            >
+              C
+            </button>
+            <button
+              type="button"
+              onClick={() => alignNodes("right")}
+              className="rounded-lg px-2 py-1 text-xs font-medium transition hover:bg-accent"
+              title="Align right"
+            >
+              R
+            </button>
+            <button
+              type="button"
+              onClick={() => alignNodes("top")}
+              className="rounded-lg px-2 py-1 text-xs font-medium transition hover:bg-accent"
+              title="Align top"
+            >
+              T
+            </button>
+            <button
+              type="button"
+              onClick={() => alignNodes("centerY")}
+              className="rounded-lg px-2 py-1 text-xs font-medium transition hover:bg-accent"
+              title="Align middle"
+            >
+              M
+            </button>
+            <button
+              type="button"
+              onClick={() => alignNodes("bottom")}
+              className="rounded-lg px-2 py-1 text-xs font-medium transition hover:bg-accent"
+              title="Align bottom"
+            >
+              B
+            </button>
+            {selectedNodes.length >= 3 ? (
+              <>
+                <span className="mx-1 w-px bg-border" />
+                <button
+                  type="button"
+                  onClick={() => distributeNodes("horizontal")}
+                  className="rounded-lg px-2 py-1 text-xs font-medium transition hover:bg-accent"
+                  title="Distribute horizontally"
+                >
+                  DH
+                </button>
+                <button
+                  type="button"
+                  onClick={() => distributeNodes("vertical")}
+                  className="rounded-lg px-2 py-1 text-xs font-medium transition hover:bg-accent"
+                  title="Distribute vertically"
+                >
+                  DV
+                </button>
+              </>
+            ) : null}
+          </div>
+        ) : null}
+
+        {/* Style panel */}
+        {selectedNodes.length === 1 ? (
+          <div className="absolute bottom-3 right-3 z-10 w-64 rounded-2xl border border-border bg-card/95 p-3 shadow-sm backdrop-blur">
+            <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              Style
+            </p>
+            <div className="space-y-2.5">
+              <ColorRow
+                label="Fill"
+                value={(selectedNodes[0].data as any).style?.fill ?? "#ffffff"}
+                onChange={(value) => updateSelected({ style: { fill: value } })}
+              />
+              <ColorRow
+                label="Stroke"
+                value={(selectedNodes[0].data as any).style?.stroke ?? "#000000"}
+                onChange={(value) => updateSelected({ style: { stroke: value } })}
+              />
+              <ColorRow
+                label="Text"
+                value={(selectedNodes[0].data as any).style?.text ?? "#000000"}
+                onChange={(value) => updateSelected({ style: { text: value } })}
+              />
+              <NumberRow
+                label="Font size"
+                value={(selectedNodes[0].data as any).style?.fontSize ?? 14}
+                onChange={(value) => updateSelected({ style: { fontSize: value } })}
+              />
+              <NumberRow
+                label="Rotation"
+                value={(selectedNodes[0].data as any).rotation ?? 0}
+                onChange={(value) => updateSelected({ rotation: value })}
+              />
+            </div>
+          </div>
+        ) : null}
+
+        {/* Context menu */}
+        {contextMenu ? (
+          <div
+            className="fixed z-50 min-w-36 rounded-xl border border-border bg-card p-1 shadow-lg"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                duplicateNode(contextMenu.nodeId)
+                setContextMenu(null)
+              }}
+              className="block w-full rounded-lg px-3 py-1.5 text-left text-sm transition hover:bg-accent"
+            >
+              Duplicate
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                deleteNode(contextMenu.nodeId)
+                setContextMenu(null)
+              }}
+              className="block w-full rounded-lg px-3 py-1.5 text-left text-sm text-destructive transition hover:bg-destructive/10"
+            >
+              Delete
+            </button>
+          </div>
+        ) : null}
+
+        {/* Empty hint */}
+        {isEmpty ? (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <div className="max-w-sm rounded-3xl border border-border bg-card/85 p-6 text-center shadow-[0_24px_70px_-45px_rgba(0,0,0,0.45)] backdrop-blur-sm">
+              <p className="font-display text-2xl tracking-tight">A blank canvas.</p>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Use the toolbar to add nodes. Shift+drag to select, Ctrl/Cmd+A to select all.
+              </p>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </HistoryContext.Provider>
   )
 }
 

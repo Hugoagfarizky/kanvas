@@ -16,9 +16,10 @@ aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Toast system, error boundary and load/save error states for local storage.
 - Four starting templates: Brainstorm, Project plan, Weekly plan, Retrospective.
 - Board page shell with inline title editing and debounced autosave to IndexedDB.
-- M2 nodes: sticky note, text, task card, shape, frame and image with inline editing.
-- Resize and rotate handles, plus a style panel (fill, stroke, text, font size, rotation).
-- Right-click context menu (duplicate, delete) on nodes.
+- M3 selection: shift-click, marquee (Shift+drag), select-all, group move.
+- Align and distribute toolbar for multi-selection.
+- Copy, paste, duplicate and delete with keyboard shortcuts.
+- Undo/redo with a 50-step history.
 - Board schema (`schemaVersion: 1`) for nodes, edges, strokes and viewport.
 - PWA manifest, self-hosted fonts and an offline service worker.
 - Playwright smoke tests in CI (persist, theme, undo, export/import, offline).
