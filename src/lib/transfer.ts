@@ -145,7 +145,8 @@ function isNodeStyle(value: unknown): boolean {
     isRecord(value) &&
     typeof value.fill === "string" &&
     typeof value.stroke === "string" &&
-    typeof value.text === "string"
+    typeof value.text === "string" &&
+    (value.fontSize === undefined || isFiniteNumber(value.fontSize))
   )
 }
 

@@ -37,11 +37,11 @@ progress stays visible in the repository.
 
 ### M2 — Nodes
 
-- [ ] Sticky note, text, task card (checklist), shape, frame and image nodes
-- [ ] Inline text editing, resize and rotate
-- [ ] Style panel: fill, stroke, text colour, font size
-- [ ] Context menu per node type
-- **Done when:** every node type can be created, edited and styled.
+- [x] Sticky note, text, task card (checklist), shape, frame and image nodes
+- [x] Inline text editing, resize and rotate
+- [x] Style panel: fill, stroke, text colour, font size
+- [x] Context menu per node type
+- **Done when:** every node type can be created, edited and styled. ✅
 
 ### M3 — Selection and history
 

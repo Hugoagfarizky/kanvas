@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ArrowLeft, Compass, Download, RefreshCw } from "lucide-react"
 import { lazy, Suspense, useEffect, useRef, useState } from "react"
 import { Link, useParams } from "react-router-dom"
@@ -99,6 +100,14 @@ export function BoardPage() {
     const next = { ...board, viewport }
     setBoard(next)
     persist(next, false)
+  }
+
+  function handleNodesPersist(nodes: any[], edges: any[]) {
+    if (!board) return
+
+    const next = { ...board, nodes, edges }
+    setBoard(next)
+    persist(next, true)
   }
 
   function handleTitleChange(value: string) {
@@ -245,7 +254,11 @@ export function BoardPage() {
         {loadState === "error" ? <LoadError onRetry={retryLoad} /> : null}
         {loadState === "ready" && board ? (
           <Suspense fallback={<p className="text-sm text-muted-foreground">Opening canvas...</p>}>
-            <BoardCanvas board={board} onViewportChange={handleViewportChange} />
+            <BoardCanvas
+              board={board}
+              onViewportChange={handleViewportChange}
+              onNodesPersist={handleNodesPersist}
+            />
           </Suspense>
         ) : null}
       </main>

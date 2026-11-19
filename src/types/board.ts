@@ -24,6 +24,7 @@ export type NodeStyle = {
   fill: string
   stroke: string
   text: string
+  fontSize?: number
 }
 
 export type NoteData = { text: string }
@@ -39,6 +40,7 @@ type NodeBase<TType extends NodeType, TData> = {
   type: TType
   position: Point
   size: Size
+  rotation?: number
   style: NodeStyle
   parentId?: string
   data: TData
