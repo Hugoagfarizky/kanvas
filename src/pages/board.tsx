@@ -1,15 +1,18 @@
-import { ArrowLeft, Compass, Download, PenLine, RefreshCw } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
+import { ArrowLeft, Compass, Download, RefreshCw } from "lucide-react"
+import { lazy, Suspense, useEffect, useRef, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 
 import { ThemeToggle } from "@/components/theme-toggle"
-import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { getBoardById, saveBoard } from "@/lib/db"
 import { useToast } from "@/lib/toast"
 import { boardFileName, downloadBoard } from "@/lib/transfer"
 import { cn } from "@/lib/utils"
-import type { Board } from "@/types/board"
+import type { Board, Viewport } from "@/types/board"
+
+const BoardCanvas = lazy(() =>
+  import("@/components/canvas").then((module) => ({ default: module.BoardCanvas })),
+)
 
 type LoadState = "loading" | "ready" | "missing" | "error"
 type SaveState = "saved" | "saving" | "error"
@@ -73,18 +76,29 @@ export function BoardPage() {
     }
   }, [])
 
-  function persist(next: Board) {
+  function persist(next: Board, touchUpdatedAt = true) {
     const seq = saveSeq.current + 1
     saveSeq.current = seq
     setSaveState("saving")
 
-    void saveBoard({ ...next, updatedAt: Date.now() })
+    const toSave = touchUpdatedAt ? { ...next, updatedAt: Date.now() } : next
+    if (touchUpdatedAt) setBoard(toSave)
+
+    void saveBoard(toSave)
       .then(() => {
         if (seq === saveSeq.current) setSaveState("saved")
       })
       .catch(() => {
         if (seq === saveSeq.current) setSaveState("error")
       })
+  }
+
+  function handleViewportChange(viewport: Viewport) {
+    if (!board) return
+
+    const next = { ...board, viewport }
+    setBoard(next)
+    persist(next, false)
   }
 
   function handleTitleChange(value: string) {
@@ -222,43 +236,19 @@ export function BoardPage() {
         </div>
       </header>
 
-      <main className="dot-grid relative flex flex-1 items-center justify-center p-6">
+      <main className="relative min-h-0 flex-1 overflow-hidden">
         {loadState === "loading" ? (
           <p className="text-sm text-muted-foreground">Opening board…</p>
         ) : null}
 
         {loadState === "missing" ? <MissingBoard /> : null}
         {loadState === "error" ? <LoadError onRetry={retryLoad} /> : null}
-        {loadState === "ready" ? <EmptyCanvas /> : null}
+        {loadState === "ready" && board ? (
+          <Suspense fallback={<p className="text-sm text-muted-foreground">Opening canvas...</p>}>
+            <BoardCanvas board={board} onViewportChange={handleViewportChange} />
+          </Suspense>
+        ) : null}
       </main>
-    </div>
-  )
-}
-
-function EmptyCanvas() {
-  return (
-    <div className="w-full max-w-md rounded-3xl border border-border bg-card/85 p-8 text-center shadow-[0_24px_70px_-45px_rgba(0,0,0,0.45)] backdrop-blur-sm">
-      <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
-        <PenLine className="size-5" />
-      </div>
-      <h1 className="mt-4 font-display text-3xl tracking-tight">A blank page, on purpose.</h1>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-        Sticky notes, task cards, connectors and freehand ink are being wired up next. This board is
-        saved in your browser, and you can export a backup from the header at any time.
-      </p>
-      <div className="mt-5 flex flex-wrap justify-center gap-1.5">
-        {["Notes", "Tasks", "Ink", "Connectors"].map((feature) => (
-          <Badge key={feature} variant="outline">
-            {feature} · soon
-          </Badge>
-        ))}
-      </div>
-      <Link
-        to="/"
-        className={cn(buttonVariants({ variant: "outline", size: "sm" }), "mt-6 inline-flex")}
-      >
-        Back to boards
-      </Link>
     </div>
   )
 }

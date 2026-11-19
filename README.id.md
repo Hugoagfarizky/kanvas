@@ -29,8 +29,10 @@ akal.
 
 Kanvas masih tahap awal. **M0 selesai**, dan ruang kerja lokal sudah mendukung beberapa fitur yang
 sebelumnya direncanakan di milestone berikutnya: pencarian board, duplikasi, import/export JSON
-dengan undo hapus, sistem toast, error boundary, dan penggunaan offline sebagai PWA. Mesin kanvas
-adalah milestone berikutnya — lihat [ROADMAP.md](ROADMAP.md).
+dengan undo hapus, sistem toast, error boundary, dan penggunaan offline sebagai PWA. **M1 inti kanvas
+juga sudah jalan**: viewport tak terbatas dengan dot grid, pan, zoom, minimap, kontrol, dan pintasan
+keyboard, dengan viewport tersimpan per board. Sticky note, ink, dan konektor adalah milestone
+berikutnya — lihat [ROADMAP.md](ROADMAP.md).
 
 ![Board kosong dalam mode gelap](docs/screenshot-board.png)
 
@@ -47,14 +49,14 @@ npm run dev
 
 Buka <http://localhost:5173>.
 
-| Perintah         | Fungsi                          |
-| ---------------- | ------------------------------- |
-| `npm run dev`    | Server pengembangan             |
-| `npm run build`  | Typecheck lalu build ke `dist/` |
-| `npm run lint`   | ESLint                          |
-| `npm test`       | Unit test                       |
-| `npm run test:e2e` | Smoke test Playwright         |
-| `npm run format` | Format dengan Prettier          |
+| Perintah           | Fungsi                          |
+| ------------------ | ------------------------------- |
+| `npm run dev`      | Server pengembangan             |
+| `npm run build`    | Typecheck lalu build ke `dist/` |
+| `npm run lint`     | ESLint                          |
+| `npm test`         | Unit test                       |
+| `npm run test:e2e` | Smoke test Playwright           |
+| `npm run format`   | Format dengan Prettier          |
 
 ## Privasi
 

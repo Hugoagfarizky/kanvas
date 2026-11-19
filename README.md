@@ -37,8 +37,10 @@ sense.
 
 Kanvas is in early development. **M0 is live**, and the local workspace already supports a few pieces that
 used to be on later milestones: board search, duplicate, JSON import/export with undoable delete, a toast
-system, an error boundary, and offline use as a PWA. The canvas engine is the next milestone — see
-[ROADMAP.md](ROADMAP.md) for what is coming.
+system, an error boundary, and offline use as a PWA. **M1 canvas core is now live too**: an infinite
+viewport with a dot grid, pan, zoom, minimap, controls and keyboard shortcuts, with the viewport saved per
+board. Sticky notes, ink and connectors are the next milestones — see [ROADMAP.md](ROADMAP.md) for what
+is coming.
 
 ![Empty board in dark mode](docs/screenshot-board.png)
 

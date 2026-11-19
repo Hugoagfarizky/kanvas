@@ -29,11 +29,11 @@ progress stays visible in the repository.
 
 ### M1 — Canvas core
 
-- [ ] React Flow viewport with dot grid, pan, zoom and minimap
-- [ ] Zoom controls, fit-to-screen, keyboard zoom shortcuts
-- [ ] Empty-board onboarding hints
-- [ ] Persist viewport per board
-- **Done when:** a board can be panned and zoomed smoothly with the viewport restored on reload.
+- [x] React Flow viewport with dot grid, pan, zoom and minimap
+- [x] Zoom controls, fit-to-screen, keyboard zoom shortcuts
+- [x] Empty-board onboarding hints
+- [x] Persist viewport per board
+- **Done when:** a board can be panned and zoomed smoothly with the viewport restored on reload. ✅
 
 ### M2 — Nodes
 
