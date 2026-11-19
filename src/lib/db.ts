@@ -6,17 +6,23 @@ import type { Board, TemplateId } from "@/types/board"
 const boardsStore = createStore("kanvas", "boards")
 const BOARDS_KEY = "boards"
 
-const EMPTY_BOARD_STATE = {
-  schemaVersion: 1 as const,
-  viewport: { x: 0, y: 0, zoom: 1 },
-  nodes: [],
-  edges: [],
-  strokes: [],
+function emptyBoardState() {
+  return {
+    schemaVersion: 1 as const,
+    viewport: { x: 0, y: 0, zoom: 1 },
+    nodes: [],
+    edges: [],
+    strokes: [],
+  }
+}
+
+export function sortBoards(boards: Board[]): Board[] {
+  return [...boards].sort((a, b) => b.updatedAt - a.updatedAt)
 }
 
 export async function listBoards(): Promise<Board[]> {
   const boards = (await get<Board[]>(BOARDS_KEY, boardsStore)) ?? []
-  return [...boards].sort((a, b) => b.updatedAt - a.updatedAt)
+  return sortBoards(boards)
 }
 
 export async function getBoardById(id: string): Promise<Board | undefined> {
@@ -50,7 +56,7 @@ export function createBoardRecord(input: { title: string; templateId?: TemplateI
   const now = Date.now()
 
   return {
-    ...EMPTY_BOARD_STATE,
+    ...emptyBoardState(),
     id: createId("board"),
     title: input.title.trim() || "Untitled board",
     templateId: input.templateId ?? "blank",
@@ -66,4 +72,20 @@ export async function createBoard(input: {
   const board = createBoardRecord(input)
   await saveBoard(board)
   return board
+}
+
+export async function duplicateBoard(board: Board): Promise<Board> {
+  const now = Date.now()
+  const title = `${board.title} (copy)`
+
+  const copy: Board = {
+    ...structuredClone(board),
+    id: createId("board"),
+    title: title.slice(0, 120),
+    createdAt: now,
+    updatedAt: now,
+  }
+
+  await saveBoard(copy)
+  return copy
 }

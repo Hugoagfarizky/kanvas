@@ -35,8 +35,9 @@ sense.
 
 ## Status
 
-Kanvas is in early development. **M0 is live**: the app shell, local board storage, templates,
-theme switching and the GitHub Pages deployment. The canvas engine is the next milestone — see
+Kanvas is in early development. **M0 is live**, and the local workspace already supports a few pieces that
+used to be on later milestones: board search, duplicate, JSON import/export with undoable delete, a toast
+system, an error boundary, and offline use as a PWA. The canvas engine is the next milestone — see
 [ROADMAP.md](ROADMAP.md) for what is coming.
 
 ![Empty board in dark mode](docs/screenshot-board.png)
@@ -76,6 +77,7 @@ Open <http://localhost:5173>. The app is a hash-routed SPA, so no server is requ
 | `npm run lint`      | Run ESLint                        |
 | `npm run typecheck` | Run TypeScript project references |
 | `npm test`          | Run the unit tests once           |
+| `npm run test:e2e`  | Run the Playwright smoke tests    |
 | `npm run format`    | Format with Prettier              |
 
 ## Project structure
@@ -98,8 +100,8 @@ carries a `schemaVersion` for migrations.
 ## Privacy
 
 Kanvas does not have a backend and does not upload your boards. Data lives in your browser's
-IndexedDB under the `kanvas` database. Clearing site data removes your boards, so JSON import and
-export are planned for M5.
+IndexedDB under the `kanvas` database. Clearing site data removes your boards, so export a JSON backup
+from the board header when you want to keep one. Boards can be imported again from the dashboard.
 
 ## Contributing
 

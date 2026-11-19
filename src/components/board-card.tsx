@@ -1,5 +1,5 @@
-import { Trash2 } from "lucide-react"
-import { useEffect, useState } from "react"
+import { Copy, Trash2 } from "lucide-react"
+import type { ReactNode } from "react"
 import { Link } from "react-router-dom"
 
 import { formatRelativeTime } from "@/lib/date"
@@ -7,15 +7,18 @@ import { getTemplate } from "@/lib/templates"
 import { cn } from "@/lib/utils"
 import type { Board } from "@/types/board"
 
-export function BoardCard({ board, onDelete }: { board: Board; onDelete: (id: string) => void }) {
-  const [confirming, setConfirming] = useState(false)
+export function BoardCard({
+  board,
+  now,
+  onDuplicate,
+  onDelete,
+}: {
+  board: Board
+  now: number
+  onDuplicate: (board: Board) => void
+  onDelete: (board: Board) => void
+}) {
   const template = getTemplate(board.templateId)
-
-  useEffect(() => {
-    if (!confirming) return
-    const timer = window.setTimeout(() => setConfirming(false), 3000)
-    return () => window.clearTimeout(timer)
-  }, [confirming])
 
   return (
     <div className="group relative">
@@ -62,7 +65,7 @@ export function BoardCard({ board, onDelete }: { board: Board; onDelete: (id: st
           <div className="min-w-0">
             <h3 className="truncate font-medium">{board.title}</h3>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Edited {formatRelativeTime(board.updatedAt)}
+              Edited {formatRelativeTime(board.updatedAt, now)}
             </p>
           </div>
           <span className="mt-0.5 hidden shrink-0 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-muted-foreground sm:inline">
@@ -71,25 +74,41 @@ export function BoardCard({ board, onDelete }: { board: Board; onDelete: (id: st
         </div>
       </Link>
 
-      <button
-        type="button"
-        onClick={() => {
-          if (!confirming) {
-            setConfirming(true)
-            return
-          }
-          onDelete(board.id)
-        }}
-        aria-label={confirming ? `Confirm delete ${board.title}` : `Delete ${board.title}`}
-        className={cn(
-          "absolute right-3 top-3 z-10 inline-flex h-7 items-center gap-1 rounded-full border px-2 text-[10px] font-medium shadow-sm transition focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40",
-          confirming
-            ? "border-destructive/40 bg-destructive text-white"
-            : "border-border bg-background/90 text-muted-foreground opacity-100 hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100",
-        )}
-      >
-        {confirming ? "Sure?" : <Trash2 className="size-3.5" />}
-      </button>
+      <div className="absolute right-2.5 top-2.5 z-10 flex items-center gap-1 sm:opacity-0 sm:transition-opacity sm:group-focus-within:opacity-100 sm:group-hover:opacity-100">
+        <CardAction label={`Duplicate ${board.title}`} onClick={() => onDuplicate(board)}>
+          <Copy />
+        </CardAction>
+        <CardAction label={`Delete ${board.title}`} onClick={() => onDelete(board)} danger>
+          <Trash2 />
+        </CardAction>
+      </div>
     </div>
+  )
+}
+
+function CardAction({
+  label,
+  onClick,
+  danger,
+  children,
+}: {
+  label: string
+  onClick: () => void
+  danger?: boolean
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className={cn(
+        "inline-flex size-7 items-center justify-center rounded-full border border-border bg-background/90 text-muted-foreground shadow-sm backdrop-blur transition hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40 [&_svg]:size-3.5",
+        danger && "hover:border-destructive/40 hover:bg-destructive hover:text-white",
+      )}
+    >
+      {children}
+    </button>
   )
 }

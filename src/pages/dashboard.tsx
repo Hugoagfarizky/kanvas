@@ -1,5 +1,5 @@
-import { LayoutGrid, Plus } from "lucide-react"
-import { useEffect, useState } from "react"
+import { LayoutGrid, Loader2, Plus, Search, Upload, X } from "lucide-react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 import { BoardCard } from "@/components/board-card"
@@ -8,54 +8,198 @@ import { Logo } from "@/components/logo"
 import { SiteHeader } from "@/components/site-header"
 import { TemplateCard } from "@/components/template-card"
 import { Button } from "@/components/ui/button"
-import { createBoard, deleteBoardById, listBoards } from "@/lib/db"
+import {
+  createBoard,
+  deleteBoardById,
+  duplicateBoard,
+  listBoards,
+  saveBoard,
+  sortBoards,
+} from "@/lib/db"
 import { site } from "@/lib/site"
 import { TEMPLATES } from "@/lib/templates"
+import { useToast } from "@/lib/toast"
+import { readBoardFile } from "@/lib/transfer"
 import type { Board, TemplateId } from "@/types/board"
 
 export function DashboardPage() {
   const navigate = useNavigate()
+  const { toast } = useToast()
+
   const [boards, setBoards] = useState<Board[] | null>(null)
+  const [loadError, setLoadError] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [query, setQuery] = useState("")
+  const [reloadToken, setReloadToken] = useState(0)
+  const [now, setNow] = useState(() => Date.now())
+
+  const searchRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const hasBoards = (boards?.length ?? 0) > 0
+  const normalizedQuery = query.trim().toLowerCase()
+  const visibleBoards =
+    boards?.filter((board) => board.title.toLowerCase().includes(normalizedQuery)) ?? []
+
+  useEffect(() => {
+    document.title = "Kanvas — plans, scribbles & ideas"
+  }, [])
 
   useEffect(() => {
     let active = true
 
     listBoards()
       .then((result) => {
-        if (active) setBoards(result)
+        if (!active) return
+        setBoards(result)
+        setLoadError(false)
       })
       .catch(() => {
-        if (active) setBoards([])
+        if (!active) return
+        setBoards([])
+        setLoadError(true)
       })
 
     return () => {
       active = false
     }
+  }, [reloadToken])
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000)
+    return () => window.clearInterval(timer)
   }, [])
 
-  async function handleCreate(templateId: TemplateId = "blank") {
-    if (creating) return
-    setCreating(true)
+  const handleCreate = useCallback(
+    async (templateId: TemplateId = "blank") => {
+      if (creating) return
+      setCreating(true)
 
+      try {
+        const template = TEMPLATES.find((item) => item.id === templateId)
+        const board = await createBoard({
+          title: template?.boardTitle ?? "Untitled board",
+          templateId,
+        })
+        navigate(`/board/${board.id}`)
+      } catch {
+        toast({
+          title: "Could not create the board",
+          description: "Local storage may be unavailable or full.",
+          tone: "error",
+        })
+      } finally {
+        setCreating(false)
+      }
+    },
+    [creating, navigate, toast],
+  )
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return
+
+      const target = event.target as HTMLElement | null
+      if (target?.closest("input, textarea, select, [contenteditable='true']")) return
+
+      if (event.key === "/" && searchRef.current) {
+        event.preventDefault()
+        searchRef.current.focus()
+        return
+      }
+
+      if (event.key.toLowerCase() === "n") {
+        event.preventDefault()
+        void handleCreate("blank")
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [handleCreate])
+
+  async function handleDuplicate(board: Board) {
     try {
-      const template = TEMPLATES.find((item) => item.id === templateId)
-      const board = await createBoard({
-        title: template?.boardTitle ?? "Untitled board",
-        templateId,
+      const copy = await duplicateBoard(board)
+      setBoards((current) => sortBoards([copy, ...(current ?? [])]))
+      toast({
+        title: "Board duplicated",
+        description: copy.title,
+        tone: "success",
+        action: { label: "Open", onClick: () => navigate(`/board/${copy.id}`) },
       })
-      navigate(`/board/${board.id}`)
-    } finally {
-      setCreating(false)
+    } catch {
+      toast({
+        title: "Could not duplicate the board",
+        description: "Local storage may be unavailable or full.",
+        tone: "error",
+      })
     }
   }
 
-  async function handleDelete(id: string) {
-    setBoards((current) => current?.filter((board) => board.id !== id) ?? current)
-    await deleteBoardById(id)
+  async function handleDelete(board: Board) {
+    setBoards((current) => current?.filter((item) => item.id !== board.id) ?? current)
+
+    try {
+      await deleteBoardById(board.id)
+      toast({
+        title: "Board deleted",
+        description: board.title,
+        duration: 7000,
+        action: {
+          label: "Undo",
+          onClick: () => {
+            void saveBoard(board)
+              .then(() =>
+                setBoards((current) =>
+                  sortBoards([board, ...(current ?? []).filter((item) => item.id !== board.id)]),
+                ),
+              )
+              .catch(() => {
+                toast({
+                  title: "Could not restore the board",
+                  tone: "error",
+                })
+              })
+          },
+        },
+      })
+    } catch {
+      setBoards((current) => sortBoards([board, ...(current ?? [])]))
+      toast({
+        title: "Could not delete the board",
+        description: "Local storage may be unavailable.",
+        tone: "error",
+      })
+    }
   }
 
-  const boardCount = boards?.length ?? 0
+  async function handleImportFile(file: File) {
+    try {
+      const board = await readBoardFile(file)
+      await saveBoard(board)
+      setBoards((current) => sortBoards([board, ...(current ?? [])]))
+      toast({
+        title: "Board imported",
+        description: board.title,
+        tone: "success",
+        action: { label: "Open", onClick: () => navigate(`/board/${board.id}`) },
+      })
+    } catch (error) {
+      toast({
+        title: "Import failed",
+        description: error instanceof Error ? error.message : "That file could not be imported.",
+        tone: "error",
+        duration: 8000,
+      })
+    }
+  }
+
+  function retryLoad() {
+    setBoards(null)
+    setLoadError(false)
+    setReloadToken((token) => token + 1)
+  }
 
   return (
     <div className="flex min-h-svh flex-col">
@@ -64,33 +208,98 @@ export function DashboardPage() {
       <main className="mx-auto w-full max-w-6xl flex-1 px-5 sm:px-6">
         <Hero onStart={() => void handleCreate("blank")} />
 
-        <section id="boards" className="scroll-mt-24 border-t border-border/70 py-12">
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        {loadError ? (
+          <div
+            role="alert"
+            className="mb-12 flex flex-col gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div>
+              <p className="font-medium text-destructive">Local storage is unavailable</p>
+              <p className="mt-1 text-muted-foreground">
+                Kanvas cannot read or save boards in this browser. If you are in private mode, try a
+                normal window.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={retryLoad}>
+              Retry
+            </Button>
+          </div>
+        ) : null}
+
+        <section
+          id="boards"
+          aria-busy={boards === null}
+          className="scroll-mt-24 border-t border-border/70 py-12"
+        >
+          <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h2 className="font-display text-3xl tracking-tight sm:text-4xl">Your boards</h2>
               <p className="mt-1.5 text-sm text-muted-foreground">
                 {boards === null
                   ? "Opening your local workspace…"
-                  : boardCount === 0
-                    ? "Nothing here yet — the page is blank on purpose."
-                    : `${boardCount} board${boardCount === 1 ? "" : "s"} saved on this device.`}
+                  : boardCountLabel(boards.length, loadError)}
               </p>
             </div>
 
-            {boardCount > 0 ? (
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+              {hasBoards ? (
+                <div className="relative w-full sm:w-56">
+                  <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    ref={searchRef}
+                    type="search"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Search boards…"
+                    aria-label="Search boards"
+                    className="h-8 w-full rounded-md border border-border bg-card/60 pl-8 pr-8 text-xs outline-none transition placeholder:text-muted-foreground/70 focus:border-ring focus:ring-[3px] focus:ring-ring/25 [&::-webkit-search-cancel-button]:hidden"
+                  />
+                  {query ? (
+                    <button
+                      type="button"
+                      onClick={() => setQuery("")}
+                      aria-label="Clear search"
+                      className="absolute right-1.5 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded text-muted-foreground transition hover:bg-accent hover:text-foreground"
+                    >
+                      <X className="size-3" />
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json,application/json"
+                className="sr-only"
+                aria-label="Import a board file"
+                onChange={(event) => {
+                  const file = event.target.files?.[0]
+                  event.target.value = ""
+                  if (file) void handleImportFile(file)
+                }}
+              />
+
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => void handleCreate("blank")}
-                disabled={creating}
+                onClick={() => fileInputRef.current?.click()}
+                disabled={boards === null}
               >
-                <Plus />
-                New board
+                <Upload />
+                Import
               </Button>
-            ) : null}
+
+              {hasBoards ? (
+                <Button size="sm" onClick={() => void handleCreate("blank")} disabled={creating}>
+                  {creating ? <Loader2 className="animate-spin" /> : <Plus />}
+                  New board
+                </Button>
+              ) : null}
+            </div>
           </div>
 
-          {boards === null ? (
+          {loadError ? null : boards === null ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 3 }).map((_, index) => (
                 <div
@@ -110,7 +319,7 @@ export function DashboardPage() {
               </p>
               <div className="mt-6 flex flex-col justify-center gap-2 sm:flex-row">
                 <Button onClick={() => void handleCreate("blank")} disabled={creating}>
-                  <Plus />
+                  {creating ? <Loader2 className="animate-spin" /> : <Plus />}
                   Blank board
                 </Button>
                 <Button
@@ -124,11 +333,30 @@ export function DashboardPage() {
                   Browse templates
                 </Button>
               </div>
+              <p className="mt-6 text-xs text-muted-foreground">
+                Tip: press <Kbd>N</Kbd> for a new board or <Kbd>/</Kbd> to search.
+              </p>
+            </div>
+          ) : visibleBoards.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-border bg-card/40 px-6 py-12 text-center">
+              <p className="font-display text-2xl">No boards match “{query.trim()}”</p>
+              <p className="mt-1.5 text-sm text-muted-foreground">
+                Try a shorter search, or clear the filter.
+              </p>
+              <Button variant="outline" size="sm" className="mt-5" onClick={() => setQuery("")}>
+                Clear search
+              </Button>
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {boards.map((board) => (
-                <BoardCard key={board.id} board={board} onDelete={handleDelete} />
+              {visibleBoards.map((board) => (
+                <BoardCard
+                  key={board.id}
+                  board={board}
+                  now={now}
+                  onDuplicate={handleDuplicate}
+                  onDelete={handleDelete}
+                />
               ))}
             </div>
           )}
@@ -193,5 +421,19 @@ export function DashboardPage() {
         </div>
       </footer>
     </div>
+  )
+}
+
+function boardCountLabel(count: number, loadError: boolean): string {
+  if (loadError) return "Local boards could not be loaded."
+  if (count === 0) return "Nothing here yet — the page is blank on purpose."
+  return `${count} board${count === 1 ? "" : "s"} saved on this device.`
+}
+
+function Kbd({ children }: { children: string }) {
+  return (
+    <kbd className="mx-0.5 inline-flex min-w-5 items-center justify-center rounded border border-border bg-background px-1.5 py-0.5 font-sans text-[10px] font-medium text-foreground shadow-sm">
+      {children}
+    </kbd>
   )
 }

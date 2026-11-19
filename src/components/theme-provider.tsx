@@ -2,11 +2,20 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 
 import { THEME_STORAGE_KEY, ThemeContext, type Theme } from "@/lib/theme"
 
+const THEME_COLORS: Record<Theme, string> = {
+  light: "#f7f5ef",
+  dark: "#22242e",
+}
+
 function getInitialTheme(): Theme {
   if (typeof window === "undefined") return "light"
 
-  const stored = window.localStorage.getItem(THEME_STORAGE_KEY)
-  if (stored === "light" || stored === "dark") return stored
+  try {
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY)
+    if (stored === "light" || stored === "dark") return stored
+  } catch {
+    // Storage can be unavailable in private mode; fall through to the OS preference.
+  }
 
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
 }
@@ -19,10 +28,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.classList.toggle("dark", theme === "dark")
     root.style.colorScheme = theme
 
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", THEME_COLORS[theme])
+
     try {
       window.localStorage.setItem(THEME_STORAGE_KEY, theme)
     } catch {
-      // Storage can be unavailable in private mode; the theme still works for this session.
+      // The theme still works for this session without persistence.
     }
   }, [theme])
 

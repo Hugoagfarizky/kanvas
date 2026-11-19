@@ -22,6 +22,10 @@ progress stays visible in the repository.
 - [x] Board page shell with editable title and autosave
 - [x] CI (lint, typecheck, test, build) and GitHub Pages deploy
 - [x] README, roadmap, contributing guide, issue and PR templates
+- [x] Toast system, error boundary and load/save error states
+- [x] Board search, duplicate, JSON import/export and undoable delete
+- [x] PWA manifest, self-hosted fonts and offline service worker
+- [x] Playwright smoke tests in CI
 
 ### M1 — Canvas core
 
@@ -59,8 +63,8 @@ progress stays visible in the repository.
 
 - [ ] IndexedDB autosave for nodes, edges, strokes and viewport
 - [ ] Dashboard thumbnails and sorting
-- [ ] Rename, duplicate and delete from the dashboard
-- [ ] JSON import/export with schema migration
+- [x] Rename, duplicate and delete from the dashboard
+- [x] JSON import/export with schema migration
 - **Done when:** a reload never loses work and a board round-trips through export/import.
 
 ### M6 — Templates, export and polish
@@ -68,8 +72,8 @@ progress stays visible in the repository.
 - [ ] Seed content for the four templates
 - [ ] PNG export
 - [ ] Mobile and touch support
-- [ ] Empty states, toasts and onboarding
-- [ ] Playwright smoke tests in CI
+- [x] Empty states, toasts and onboarding
+- [x] Playwright smoke tests in CI
 - **Done when:** every template opens useful content on desktop and mobile.
 
 ### M7 — v0.1.0 release

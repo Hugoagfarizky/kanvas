@@ -27,9 +27,10 @@ akal.
 
 ## Status
 
-Kanvas masih tahap awal. **M0 selesai**: kerangka aplikasi, penyimpanan board lokal, template, mode
-gelap/terang, dan deploy GitHub Pages. Mesin kanvas adalah milestone berikutnya — lihat
-[ROADMAP.md](ROADMAP.md).
+Kanvas masih tahap awal. **M0 selesai**, dan ruang kerja lokal sudah mendukung beberapa fitur yang
+sebelumnya direncanakan di milestone berikutnya: pencarian board, duplikasi, import/export JSON
+dengan undo hapus, sistem toast, error boundary, dan penggunaan offline sebagai PWA. Mesin kanvas
+adalah milestone berikutnya — lihat [ROADMAP.md](ROADMAP.md).
 
 ![Board kosong dalam mode gelap](docs/screenshot-board.png)
 
@@ -52,12 +53,14 @@ Buka <http://localhost:5173>.
 | `npm run build`  | Typecheck lalu build ke `dist/` |
 | `npm run lint`   | ESLint                          |
 | `npm test`       | Unit test                       |
+| `npm run test:e2e` | Smoke test Playwright         |
 | `npm run format` | Format dengan Prettier          |
 
 ## Privasi
 
-Tidak ada backend. Board tersimpan di IndexedDB browser dengan nama database `kanvas`. Menghapus
-data situs akan menghapus board, karena itu export/import JSON direncanakan di M5.
+Tidak ada backend. Board tersimpan di IndexedDB browser dengan nama database `kanvas`. Menghapus data
+situs akan menghapus board, jadi ekspor backup JSON dari header board saat ingin menyimpannya.
+Board dapat diimpor lagi dari dashboard.
 
 ## Kontribusi
 
