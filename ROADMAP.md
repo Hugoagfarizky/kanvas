@@ -79,11 +79,11 @@ progress stays visible in the repository.
 ### M7 — v0.1.0 release
 
 - [x] Demo GIF in the README
-- [ ] Documentation pass and architecture notes
-- [ ] `v0.1.0` tag and release notes
-- [ ] Verify the Pages deployment from a clean clone
+- [x] Documentation pass and architecture notes
+- [x] `v0.1.0` tag and release notes
+- [x] Verify the Pages deployment from a clean clone
 - **Done when:** a stranger can open the demo, create a board and understand the project in five
-  minutes.
+  minutes. ✅
 
 ## Later
 
