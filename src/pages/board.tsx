@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ArrowLeft, Compass, Download, RefreshCw } from "lucide-react"
+import { ArrowLeft, Compass, Download, Image as ImageIcon, RefreshCw } from "lucide-react"
 import { lazy, Suspense, useEffect, useRef, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 
@@ -8,6 +8,7 @@ import { Button, buttonVariants } from "@/components/ui/button"
 import { getBoardById, saveBoard } from "@/lib/db"
 import { useToast } from "@/lib/toast"
 import { boardFileName, downloadBoard } from "@/lib/transfer"
+import { toPng } from "html-to-image"
 import { cn } from "@/lib/utils"
 import type { Board, Viewport } from "@/types/board"
 
@@ -158,6 +159,37 @@ export function BoardPage() {
     }
   }
 
+  async function handleExportPng() {
+    if (!board) return
+
+    const node = document.querySelector(".react-flow") as HTMLElement | null
+    if (!node) return
+
+    try {
+      const dataUrl = await toPng(node, {
+        backgroundColor: "#f7f5ef",
+        pixelRatio: 2,
+      })
+      const link = document.createElement("a")
+      link.download = `${
+        board.title
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "") || "board"
+      }.png`
+      link.href = dataUrl
+      link.click()
+      toast({ title: "PNG exported", tone: "success" })
+    } catch {
+      toast({
+        title: "PNG export failed",
+        description: "The image could not be created.",
+        tone: "error",
+      })
+    }
+  }
+
   function retryLoad() {
     setLoadState("loading")
     setReloadToken((token) => token + 1)
@@ -230,15 +262,26 @@ export function BoardPage() {
           ) : null}
 
           {loadState === "ready" ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleExport}
-              aria-label="Export board"
-              title="Export board as JSON"
-            >
-              <Download />
-            </Button>
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleExport}
+                aria-label="Export board as JSON"
+                title="Export board as JSON"
+              >
+                <Download />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => void handleExportPng()}
+                aria-label="Export board as PNG"
+                title="Export board as PNG"
+              >
+                <ImageIcon />
+              </Button>
+            </>
           ) : null}
 
           <ThemeToggle />

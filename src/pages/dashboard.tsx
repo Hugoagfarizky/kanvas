@@ -137,6 +137,30 @@ export function DashboardPage() {
     }
   }
 
+  async function handleRename(board: Board) {
+    const nextTitle = window.prompt("Rename board", board.title)
+    if (nextTitle === null) return
+
+    const trimmed = nextTitle.trim()
+    if (!trimmed || trimmed === board.title) return
+
+    const updated = { ...board, title: trimmed.slice(0, 120), updatedAt: Date.now() }
+
+    try {
+      await saveBoard(updated)
+      setBoards((current) =>
+        sortBoards((current ?? []).map((item) => (item.id === board.id ? updated : item))),
+      )
+      toast({ title: "Board renamed", description: updated.title, tone: "success" })
+    } catch {
+      toast({
+        title: "Could not rename the board",
+        description: "Local storage may be unavailable.",
+        tone: "error",
+      })
+    }
+  }
+
   async function handleDelete(board: Board) {
     setBoards((current) => current?.filter((item) => item.id !== board.id) ?? current)
 
@@ -355,6 +379,7 @@ export function DashboardPage() {
                   board={board}
                   now={now}
                   onDuplicate={handleDuplicate}
+                  onRename={handleRename}
                   onDelete={handleDelete}
                 />
               ))}

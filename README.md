@@ -21,6 +21,8 @@ No account. No cloud. Everything stays in your browser.
   <img alt="Kanvas dashboard with a hero section, board list and templates" src="docs/screenshot-light.png">
 </picture>
 
+![Kanvas demo](docs/demo.gif)
+
 ## Why Kanvas
 
 Most whiteboards are built for meetings. Kanvas is built for the messy middle of work: the

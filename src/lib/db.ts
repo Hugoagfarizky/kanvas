@@ -1,6 +1,7 @@
 import { createStore, get, set } from "idb-keyval"
 
 import { createId } from "@/lib/id"
+import { seedNodesForTemplate } from "@/lib/templates"
 import type { Board, TemplateId } from "@/types/board"
 
 const boardsStore = createStore("kanvas", "boards")
@@ -70,6 +71,11 @@ export async function createBoard(input: {
   templateId?: TemplateId
 }): Promise<Board> {
   const board = createBoardRecord(input)
+
+  if (input.templateId && input.templateId !== "blank") {
+    board.nodes = seedNodesForTemplate(input.templateId)
+  }
+
   await saveBoard(board)
   return board
 }

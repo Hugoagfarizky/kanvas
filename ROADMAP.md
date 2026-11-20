@@ -61,24 +61,24 @@ progress stays visible in the repository.
 
 ### M5 — Persistence and boards
 
-- [ ] IndexedDB autosave for nodes, edges, strokes and viewport
-- [ ] Dashboard thumbnails and sorting
+- [x] IndexedDB autosave for nodes, edges, strokes and viewport
+- [x] Dashboard thumbnails and sorting
 - [x] Rename, duplicate and delete from the dashboard
 - [x] JSON import/export with schema migration
 - **Done when:** a reload never loses work and a board round-trips through export/import.
 
 ### M6 — Templates, export and polish
 
-- [ ] Seed content for the four templates
-- [ ] PNG export
-- [ ] Mobile and touch support
+- [x] Seed content for the four templates
+- [x] PNG export
+- [x] Mobile and touch support
 - [x] Empty states, toasts and onboarding
 - [x] Playwright smoke tests in CI
 - **Done when:** every template opens useful content on desktop and mobile.
 
 ### M7 — v0.1.0 release
 
-- [ ] Demo GIF in the README
+- [x] Demo GIF in the README
 - [ ] Documentation pass and architecture notes
 - [ ] `v0.1.0` tag and release notes
 - [ ] Verify the Pages deployment from a clean clone

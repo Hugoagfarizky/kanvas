@@ -216,8 +216,6 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
   const [canUndo, setCanUndo] = useState(false)
   const [canRedo, setCanRedo] = useState(false)
   const clipboard = useRef<{ nodes: Node[]; edges: Edge[] } | null>(null)
-  const dragPushed = useRef(false)
-  const resizePushed = useRef(false)
 
   const selectedNodes = nodes.filter((node) => node.selected)
 
@@ -265,42 +263,13 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
     }
   }, [nodes, edges, strokes, onPersist])
 
-  const handleNodesChange = useCallback(
-    (changes: any) => {
-      const hasDragStart = changes.some((c: any) => c.type === "position" && c.dragging === true)
-      const hasResizeStart = changes.some(
-        (c: any) => c.type === "dimensions" && c.resizing === true,
-      )
-      const hasRemove = changes.some((c: any) => c.type === "remove")
+  const handleNodesChange = useCallback((changes: any) => {
+    setNodes((current) => applyNodeChanges(current, changes))
+  }, [])
 
-      if (hasDragStart && !dragPushed.current) {
-        pushHistory()
-        dragPushed.current = true
-      }
-      if (hasResizeStart && !resizePushed.current) {
-        pushHistory()
-        resizePushed.current = true
-      }
-      if (hasRemove) {
-        pushHistory()
-      }
-      if (changes.some((c: any) => c.type === "position" && c.dragging === false))
-        dragPushed.current = false
-      if (changes.some((c: any) => c.type === "dimensions" && c.resizing === false))
-        resizePushed.current = false
-
-      setNodes((current) => applyNodeChanges(current, changes))
-    },
-    [pushHistory],
-  )
-
-  const handleEdgesChange = useCallback(
-    (changes: any) => {
-      if (changes.some((c: any) => c.type === "remove")) pushHistory()
-      setEdges((current) => applyEdgeChanges(current, changes))
-    },
-    [pushHistory],
-  )
+  const handleEdgesChange = useCallback((changes: any) => {
+    setEdges((current) => applyEdgeChanges(current, changes))
+  }, [])
 
   const handleMoveEnd = useCallback(
     (_event: unknown, viewport: Viewport) => {
@@ -651,6 +620,8 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
             event.preventDefault()
             setContextMenu({ x: event.clientX, y: event.clientY, nodeId: node.id })
           }}
+          onNodesDelete={() => pushHistory()}
+          onEdgesDelete={() => pushHistory()}
           onPaneClick={() => {
             setContextMenu(null)
             setConnectSource(null)

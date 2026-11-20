@@ -41,6 +41,8 @@ function NodeFrame({
   style: React.CSSProperties
   rotation?: number
 }) {
+  const pushHistory = useHistoryPush()
+
   return (
     <div
       className={cn("h-full w-full", className)}
@@ -51,6 +53,7 @@ function NodeFrame({
       }}
     >
       <NodeResizer
+        onResizeStart={() => pushHistory?.()}
         isVisible={selected}
         minWidth={80}
         minHeight={40}

@@ -34,7 +34,7 @@ untuk label), plus pena, highlighter, dan penghapus dengan goresan perfect-freeh
 berbasis geometri. Kanvas kini mendukung loop M1-M4 — lihat [ROADMAP.md](ROADMAP.md) untuk M5+
 (polesan persistensi dan template).
 
-![Board kosong dalam mode gelap](docs/screenshot-board.png)
+![Demo Kanvas](docs/demo.gif)
 
 ## Menjalankan secara lokal
 

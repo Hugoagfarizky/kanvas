@@ -55,7 +55,7 @@ test("exports a board and imports it back as a copy", async ({ page }) => {
   await expect(page.getByText("Saved locally")).toBeVisible()
 
   const downloadPromise = page.waitForEvent("download")
-  await page.getByRole("button", { name: "Export board" }).click()
+  await page.getByRole("button", { name: "Export board as JSON" }).click()
   const download = await downloadPromise
 
   expect(download.suggestedFilename()).toBe("backup-test.kanvas.json")
