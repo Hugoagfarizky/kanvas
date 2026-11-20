@@ -1,5 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   Background,
   BackgroundVariant,
@@ -7,15 +5,21 @@ import {
   MiniMap,
   ReactFlow,
   ReactFlowProvider,
+  addEdge,
   useReactFlow,
+  ViewportPortal,
   type Edge,
   type Node,
   type Viewport,
 } from "@xyflow/react"
 import { applyEdgeChanges, applyNodeChanges } from "@xyflow/system"
+import { getStroke } from "perfect-freehand"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import "@xyflow/react/dist/style.css"
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/exhaustive-deps */
 
 import { HistoryContext } from "@/components/history-context"
 import { nodeTypes } from "@/components/nodes"
@@ -35,10 +39,10 @@ type CanvasProps = {
       type?: string
       color?: string
     }[]
-    strokes: unknown[]
+    strokes: any[]
   }
   onViewportChange: (viewport: Viewport) => void
-  onNodesPersist: (nodes: KanvasNode[], edges: any[]) => void
+  onPersist: (patch: { nodes: KanvasNode[]; edges: any[]; strokes: any[] }) => void
 }
 
 const DEFAULT_STYLES: Record<NodeType, NodeStyle> = {
@@ -108,7 +112,6 @@ function toFlowEdge(e: CanvasProps["board"]["edges"][number]): Edge {
 
 function toKanvasNode(fn: Node): KanvasNode {
   const d = (fn.data ?? {}) as any
-
   return {
     id: fn.id,
     type: d.kind,
@@ -146,6 +149,43 @@ function cloneEdge(edge: Edge): Edge {
   return { ...edge, style: edge.style ? { ...edge.style } : edge.style }
 }
 
+function isDrawingTool(tool: string): boolean {
+  return tool === "pen" || tool === "highlighter" || tool === "eraser"
+}
+
+function distance(a: any, b: any): number {
+  return Math.hypot(a[0] - b[0], a[1] - b[1])
+}
+
+function splitStroke(stroke: any, point: any, radius: number): any[] {
+  const points = stroke.points as any[]
+  const keep = points.map((p: any) => distance(p, point) > radius)
+  const runs: any[] = []
+  let current: any[] = []
+  for (let i = 0; i < points.length; i++) {
+    if (keep[i]) current.push(points[i])
+    else {
+      if (current.length >= 2) runs.push({ ...stroke, id: createId("stroke"), points: current })
+      current = []
+    }
+  }
+  if (current.length >= 2) runs.push({ ...stroke, id: createId("stroke"), points: current })
+  if (runs.length === 0) return [stroke]
+  if (runs.length === 1 && runs[0].points.length === points.length) return [stroke]
+  return runs
+}
+
+function strokeToPath(stroke: any): string {
+  const outline = getStroke(stroke.points, {
+    size: stroke.size,
+    thinning: 0.5,
+    smoothing: 0.5,
+    streamline: 0.5,
+  })
+  if (!outline.length) return ""
+  return `M ${outline.map((p: number[]) => p.join(" ")).join(" L ")} Z`
+}
+
 export function BoardCanvas(props: CanvasProps) {
   return (
     <ReactFlowProvider>
@@ -154,13 +194,19 @@ export function BoardCanvas(props: CanvasProps) {
   )
 }
 
-function BoardCanvasInner({ board, onViewportChange, onNodesPersist }: CanvasProps) {
+function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
   const reactFlow = useReactFlow()
   const [nodes, setNodes] = useState<Node[]>(() => board.nodes.map(toFlowNode))
   const [edges, setEdges] = useState<Edge[]>(() => board.edges.map(toFlowEdge))
+  const [strokes, setStrokes] = useState<any[]>(() => board.strokes ?? [])
+  const [tool, setTool] = useState<string>("select")
+  const [currentStroke, setCurrentStroke] = useState<any | null>(null)
+  const [connectSource, setConnectSource] = useState<string | null>(null)
+  const [isDrawing, setIsDrawing] = useState(false)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string } | null>(
     null,
   )
+
   const mounted = useRef(false)
   const persistTimer = useRef<number | null>(null)
   const history = useRef<{
@@ -211,13 +257,13 @@ function BoardCanvasInner({ board, onViewportChange, onNodesPersist }: CanvasPro
 
     if (persistTimer.current) window.clearTimeout(persistTimer.current)
     persistTimer.current = window.setTimeout(() => {
-      onNodesPersist(nodes.map(toKanvasNode), edges.map(toKanvasEdge))
+      onPersist({ nodes: nodes.map(toKanvasNode), edges: edges.map(toKanvasEdge), strokes })
     }, 400)
 
     return () => {
       if (persistTimer.current) window.clearTimeout(persistTimer.current)
     }
-  }, [nodes, edges, onNodesPersist])
+  }, [nodes, edges, strokes, onPersist])
 
   const handleNodesChange = useCallback(
     (changes: any) => {
@@ -248,9 +294,13 @@ function BoardCanvasInner({ board, onViewportChange, onNodesPersist }: CanvasPro
     [pushHistory],
   )
 
-  const handleEdgesChange = useCallback((changes: any) => {
-    setEdges((current) => applyEdgeChanges(current, changes))
-  }, [])
+  const handleEdgesChange = useCallback(
+    (changes: any) => {
+      if (changes.some((c: any) => c.type === "remove")) pushHistory()
+      setEdges((current) => applyEdgeChanges(current, changes))
+    },
+    [pushHistory],
+  )
 
   const handleMoveEnd = useCallback(
     (_event: unknown, viewport: Viewport) => {
@@ -370,7 +420,7 @@ function BoardCanvasInner({ board, onViewportChange, onNodesPersist }: CanvasPro
     })
 
     const id = createId("node")
-    const size = DEFAULT_SIZES[kind as NodeType]
+    const size = DEFAULT_SIZES[kind]
     const newNode: Node = {
       id,
       type: `kanvas-${kind}`,
@@ -508,6 +558,50 @@ function BoardCanvasInner({ board, onViewportChange, onNodesPersist }: CanvasPro
     )
   }
 
+  function eraseAt(point: any) {
+    setStrokes((prev) => prev.flatMap((stroke: any) => splitStroke(stroke, point, 12)))
+  }
+
+  function handlePointerDown(event: any) {
+    if (!isDrawingTool(tool)) return
+    const pos = reactFlow.screenToFlowPosition({ x: event.clientX, y: event.clientY })
+    if (tool === "eraser") {
+      eraseAt([pos.x, pos.y, 0.5])
+      setIsDrawing(true)
+      return
+    }
+    setIsDrawing(true)
+    setCurrentStroke({
+      id: createId("stroke"),
+      tool,
+      points: [[pos.x, pos.y, 0.5]],
+      color: tool === "highlighter" ? "#facc15" : "#1f2937",
+      size: tool === "highlighter" ? 14 : 3,
+    })
+  }
+
+  function handlePointerMove(event: any) {
+    if (!isDrawing) return
+    const pos = reactFlow.screenToFlowPosition({ x: event.clientX, y: event.clientY })
+    if (tool === "eraser") {
+      eraseAt([pos.x, pos.y, 0.5])
+      return
+    }
+    setCurrentStroke((stroke: any) =>
+      stroke ? { ...stroke, points: [...stroke.points, [pos.x, pos.y, 0.5]] } : stroke,
+    )
+  }
+
+  function handlePointerUp() {
+    if (!isDrawing) return
+    setIsDrawing(false)
+    if (tool !== "eraser" && currentStroke) {
+      pushHistory()
+      setStrokes((prev) => [...prev, currentStroke])
+      setCurrentStroke(null)
+    }
+  }
+
   const isEmpty = nodes.length === 0 && edges.length === 0
 
   return (
@@ -519,19 +613,50 @@ function BoardCanvasInner({ board, onViewportChange, onNodesPersist }: CanvasPro
           nodeTypes={nodeTypes}
           onNodesChange={handleNodesChange}
           onEdgesChange={handleEdgesChange}
+          onEdgeDoubleClick={(_event, edge) => {
+            const label = window.prompt(
+              "Connector label",
+              typeof edge.label === "string" ? edge.label : "",
+            )
+            if (label === null) return
+            pushHistory()
+            setEdges((current) =>
+              current.map((item) => (item.id === edge.id ? { ...item, label } : item)),
+            )
+          }}
+          onConnect={(connection) => {
+            pushHistory()
+            setEdges((eds) => addEdge(connection, eds))
+          }}
           onMoveEnd={handleMoveEnd}
           onNodeDragStart={() => pushHistory()}
+          onNodeClick={(_event, node) => {
+            if (tool !== "connect") return
+            if (!connectSource) {
+              setConnectSource(node.id)
+              return
+            }
+            if (connectSource === node.id) {
+              setConnectSource(null)
+              return
+            }
+            pushHistory()
+            setEdges((current) => [
+              ...current,
+              { id: createId("edge"), source: connectSource, target: node.id, type: "default" },
+            ])
+            setConnectSource(null)
+          }}
           onNodeContextMenu={(event, node) => {
             event.preventDefault()
             setContextMenu({ x: event.clientX, y: event.clientY, nodeId: node.id })
           }}
-          onPaneClick={() => setContextMenu(null)}
-          minZoom={0.1}
-          maxZoom={4}
-          panOnScroll
-          zoomOnScroll
-          zoomOnPinch
-          panOnDrag
+          onPaneClick={() => {
+            setContextMenu(null)
+            setConnectSource(null)
+          }}
+          nodesDraggable={tool === "select" || tool === "hand"}
+          panOnDrag={tool === "select" || tool === "hand"}
           selectionOnDrag={false}
           selectionKeyCode="Shift"
           deleteKeyCode={["Delete", "Backspace"]}
@@ -559,10 +684,49 @@ function BoardCanvasInner({ board, onViewportChange, onNodesPersist }: CanvasPro
             pannable
             zoomable
           />
+          <ViewportPortal>
+            <svg
+              className="pointer-events-none absolute left-0 top-0 overflow-visible"
+              style={{ width: 1, height: 1 }}
+            >
+              {strokes.map((stroke: any) => (
+                <path
+                  key={stroke.id}
+                  d={strokeToPath(stroke)}
+                  fill={stroke.color}
+                  fillOpacity={stroke.tool === "highlighter" ? 0.35 : 1}
+                  stroke="none"
+                />
+              ))}
+              {currentStroke ? (
+                <path
+                  d={strokeToPath(currentStroke)}
+                  fill={currentStroke.color}
+                  fillOpacity={currentStroke.tool === "highlighter" ? 0.35 : 1}
+                  stroke="none"
+                />
+              ) : null}
+            </svg>
+          </ViewportPortal>
         </ReactFlow>
 
-        {/* Toolbar */}
-        <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5 rounded-2xl border border-border bg-card/90 p-1.5 shadow-sm backdrop-blur">
+        {/* Tool selector */}
+        <div className="absolute right-3 top-3 z-40 flex flex-wrap gap-1.5 rounded-2xl border border-border bg-card/90 p-1.5 shadow-sm backdrop-blur">
+          {(["select", "pen", "highlighter", "eraser", "connect"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTool(t)}
+              className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition hover:bg-accent ${tool === t ? "bg-accent text-accent-foreground" : ""}`}
+              title={t}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+
+        {/* Node creation toolbar */}
+        <div className="absolute left-3 top-3 z-40 flex flex-wrap gap-1.5 rounded-2xl border border-border bg-card/90 p-1.5 shadow-sm backdrop-blur">
           {(
             [
               ["note", "Note"],
@@ -606,7 +770,7 @@ function BoardCanvasInner({ board, onViewportChange, onNodesPersist }: CanvasPro
 
         {/* Arrange panel */}
         {selectedNodes.length >= 2 ? (
-          <div className="absolute left-3 top-16 z-10 flex flex-wrap gap-1.5 rounded-2xl border border-border bg-card/90 p-1.5 shadow-sm backdrop-blur">
+          <div className="absolute left-3 top-16 z-40 flex flex-wrap gap-1.5 rounded-2xl border border-border bg-card/90 p-1.5 shadow-sm backdrop-blur">
             <button
               type="button"
               onClick={() => alignNodes("left")}
@@ -681,7 +845,7 @@ function BoardCanvasInner({ board, onViewportChange, onNodesPersist }: CanvasPro
 
         {/* Style panel */}
         {selectedNodes.length === 1 ? (
-          <div className="absolute bottom-3 right-3 z-10 w-64 rounded-2xl border border-border bg-card/95 p-3 shadow-sm backdrop-blur">
+          <div className="absolute bottom-3 right-3 z-40 w-64 rounded-2xl border border-border bg-card/95 p-3 shadow-sm backdrop-blur">
             <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
               Style
             </p>
@@ -744,13 +908,26 @@ function BoardCanvasInner({ board, onViewportChange, onNodesPersist }: CanvasPro
           </div>
         ) : null}
 
+        {/* Drawing overlay */}
+        <div
+          className="absolute inset-0 z-30"
+          style={{
+            pointerEvents: isDrawingTool(tool) ? "auto" : "none",
+            cursor: isDrawingTool(tool) ? "crosshair" : "default",
+          }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={handlePointerUp}
+        />
+
         {/* Empty hint */}
         {isEmpty ? (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <div className="max-w-sm rounded-3xl border border-border bg-card/85 p-6 text-center shadow-[0_24px_70px_-45px_rgba(0,0,0,0.45)] backdrop-blur-sm">
               <p className="font-display text-2xl tracking-tight">A blank canvas.</p>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Use the toolbar to add nodes. Shift+drag to select, Ctrl/Cmd+A to select all.
+                Use the toolbar to add nodes or draw. Shift+drag to select.
               </p>
             </div>
           </div>

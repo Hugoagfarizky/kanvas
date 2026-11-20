@@ -20,6 +20,9 @@ aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Align and distribute toolbar for multi-selection.
 - Copy, paste, duplicate and delete with keyboard shortcuts.
 - Undo/redo with a 50-step history.
+- M4 connectors and ink: labeled connectors via node handles (double-click to label).
+- Pen, highlighter and eraser with perfect-freehand strokes.
+- Geometry-based eraser with stroke splitting.
 - Board schema (`schemaVersion: 1`) for nodes, edges, strokes and viewport.
 - PWA manifest, self-hosted fonts and an offline service worker.
 - Playwright smoke tests in CI (persist, theme, undo, export/import, offline).

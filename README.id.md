@@ -29,9 +29,10 @@ akal.
 
 Kanvas masih tahap awal. **M0 selesai**, dan ruang kerja lokal sudah mendukung beberapa fitur yang
 sebelumnya direncanakan di milestone berikutnya: pencarian board, duplikasi, import/export JSON
-dengan undo hapus, sistem toast, error boundary, dan penggunaan offline sebagai PWA. **M3 seleksi dan riwayat juga sudah jalan**: shift-click, seleksi marquee, select-all, pindah grup,
-align dan distribute, copy/paste/duplicate/delete, serta undo/redo 50 langkah. Konektor dan ink
-adalah milestone berikutnya — lihat [ROADMAP.md](ROADMAP.md).
+dengan undo hapus, sistem toast, error boundary, dan penggunaan offline sebagai PWA. **M4 konektor dan ink juga sudah jalan**: konektor berlabel dengan menyeret antar handle node (double-click
+untuk label), plus pena, highlighter, dan penghapus dengan goresan perfect-freehand serta penghapus
+berbasis geometri. Kanvas kini mendukung loop M1-M4 — lihat [ROADMAP.md](ROADMAP.md) untuk M5+
+(polesan persistensi dan template).
 
 ![Board kosong dalam mode gelap](docs/screenshot-board.png)
 

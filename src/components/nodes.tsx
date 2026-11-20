@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { NodeResizer, useReactFlow, type NodeProps } from "@xyflow/react"
+import { Handle, NodeResizer, Position, useReactFlow, type NodeProps } from "@xyflow/react"
 
 import type { NodeStyle, NodeType, Size, TaskItem } from "@/types/board"
 import { cn } from "@/lib/utils"
@@ -56,6 +56,16 @@ function NodeFrame({
         minHeight={40}
         lineClassName="!border-primary"
         handleClassName="!size-2.5 !rounded-sm !border !border-border !bg-card"
+      />
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="!size-2.5 !border !border-border !bg-card"
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="!size-2.5 !border !border-border !bg-card"
       />
       {children}
     </div>

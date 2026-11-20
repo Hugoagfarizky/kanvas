@@ -53,11 +53,11 @@ progress stays visible in the repository.
 
 ### M4 — Connectors and ink
 
-- [ ] Labeled connectors between nodes
-- [ ] Pen, highlighter and eraser with `perfect-freehand`
-- [ ] Layer ordering between ink and nodes
-- [ ] Geometry-based eraser hit testing
-- **Done when:** drawing feels natural and erasing removes exactly the touched stroke segment.
+- [x] Labeled connectors between nodes
+- [x] Pen, highlighter and eraser with `perfect-freehand`
+- [x] Layer ordering between ink and nodes
+- [x] Geometry-based eraser hit testing
+- **Done when:** drawing feels natural and erasing removes exactly the touched stroke segment. ✅
 
 ### M5 — Persistence and boards
 

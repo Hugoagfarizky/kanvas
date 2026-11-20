@@ -102,10 +102,10 @@ export function BoardPage() {
     persist(next, false)
   }
 
-  function handleNodesPersist(nodes: any[], edges: any[]) {
+  function handlePersist(patch: { nodes: any[]; edges: any[]; strokes: any[] }) {
     if (!board) return
 
-    const next = { ...board, nodes, edges }
+    const next = { ...board, nodes: patch.nodes, edges: patch.edges, strokes: patch.strokes }
     setBoard(next)
     persist(next, true)
   }
@@ -257,7 +257,7 @@ export function BoardPage() {
             <BoardCanvas
               board={board}
               onViewportChange={handleViewportChange}
-              onNodesPersist={handleNodesPersist}
+              onPersist={handlePersist}
             />
           </Suspense>
         ) : null}

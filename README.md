@@ -37,9 +37,10 @@ sense.
 
 Kanvas is in early development. **M0 is live**, and the local workspace already supports a few pieces that
 used to be on later milestones: board search, duplicate, JSON import/export with undoable delete, a toast
-system, an error boundary, and offline use as a PWA. **M3 selection and history are live too**: shift-click, marquee selection, select-all, group move, align and
-distribute, copy/paste/duplicate/delete, and undo/redo with a 50-step history. Connectors and ink are the
-next milestones — see [ROADMAP.md](ROADMAP.md) for what is coming.
+system, an error boundary, and offline use as a PWA. **M4 connectors and ink are live too**: labeled connectors by dragging between node handles (double-click to
+label), plus pen, highlighter and eraser with perfect-freehand strokes and a geometry-based eraser. The
+canvas now supports the full M1-M4 loop — see [ROADMAP.md](ROADMAP.md) for M5+ (persistence polish and
+templates).
 
 ![Empty board in dark mode](docs/screenshot-board.png)
 
