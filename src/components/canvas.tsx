@@ -67,7 +67,7 @@ import "@xyflow/react/dist/style.css"
 
 import { HistoryContext } from "@/components/history-context"
 import { nodeTypes } from "@/components/nodes"
-import type { KanvasNode, NodeStyle, NodeType, Size } from "@/types/board"
+import type { KanvasNode, NodeStyle, NodeType, Size, TemplateId } from "@/types/board"
 import { createId } from "@/lib/id"
 import { useTheme } from "@/lib/theme"
 import { seedDeiLearningPlan, seedCardiologyDynamics, seedUXFlowArchitecture } from "@/lib/templates"
@@ -83,6 +83,8 @@ import { cn } from "@/lib/utils"
 type CanvasProps = {
   board: {
     id: string
+    title?: string
+    templateId?: TemplateId
     viewport: Viewport
     nodes: KanvasNode[]
     edges: {
@@ -295,12 +297,11 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
   const [hiddenNodeIds, setHiddenNodeIds] = useState<Set<string>>(new Set())
   const [lockedNodeIds, setLockedNodeIds] = useState<Set<string>>(new Set())
 
-  const defaultSeeds = seedDeiLearningPlan()
   const [nodes, setNodes] = useState<Node[]>(() =>
-    board.nodes.length > 0 ? board.nodes.map(toFlowNode) : defaultSeeds.nodes.map(toFlowNode),
+    (board.nodes ?? []).map(toFlowNode),
   )
   const [edges, setEdges] = useState<Edge[]>(() =>
-    board.edges.length > 0 ? board.edges.map(toFlowEdge) : defaultSeeds.edges.map(toFlowEdge),
+    (board.edges ?? []).map(toFlowEdge),
   )
   const [strokes, setStrokes] = useState<any[]>(() => board.strokes ?? [])
   const [tool, setTool] = useState<string>("select")
@@ -1012,7 +1013,9 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                 ? "Cardiology Dynamics"
                 : isUX
                   ? "UX Architecture"
-                  : "My Learning Plan"}
+                  : board.templateId === "blank" || nodes.length === 0
+                    ? board.title || "Blank Canvas"
+                    : "My Learning Plan"}
             </h2>
           </div>
 
@@ -1115,7 +1118,9 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                 ? "Patient Vitals"
                 : isUX
                   ? "Signup Flow"
-                  : "My Events"}
+                  : board.templateId === "blank" || nodes.length === 0
+                    ? "Workspace"
+                    : "My Events"}
             </h2>
           </div>
         </div>
@@ -1229,6 +1234,58 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
               </svg>
             </ViewportPortal>
           </ReactFlow>
+
+          {/* Empty Canvas Friendly Starter Prompt */}
+          {nodes.length === 0 ? (
+            <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center select-none">
+              <div className="pointer-events-auto flex flex-col items-center rounded-3xl border border-border/80 bg-card/90 p-8 text-center shadow-2xl backdrop-blur-xl max-w-sm mx-4 animate-in fade-in zoom-in-95 duration-200">
+                <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-3 shadow-inner">
+                  <Sparkles className="size-7" />
+                </div>
+                <h3 className="font-sans text-lg font-bold text-foreground">
+                  Empty Canvas
+                </h3>
+                <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
+                  Start creating by selecting a tool from the dock below, or pick a starter template.
+                </p>
+                <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      addNode(
+                        "note",
+                        {
+                          title: "New Roadmap Objective",
+                          subtitle: "Define core principles and key medical competencies.",
+                          status: "Upcoming",
+                          badgeIcon: "+",
+                        },
+                        { fill: "#ffffff", stroke: "#e2e8f0", text: "#0f172a" },
+                        { width: 290, height: 165 },
+                      )
+                    }
+                    className="rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-sm transition hover:scale-105 active:scale-95"
+                  >
+                    Add Roadmap Step
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => addNode("text")}
+                    className="rounded-full border border-border bg-secondary/80 px-4 py-2 text-xs font-semibold text-foreground transition hover:bg-secondary active:scale-95"
+                  >
+                    Add Text (T)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowTemplateModal(true)}
+                    className="rounded-full border border-border bg-secondary/80 px-4 py-2 text-xs font-semibold text-foreground transition hover:bg-secondary active:scale-95"
+                  >
+                    Browse Templates
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           {/* Canvas Drag-and-Drop Overlay */}
           {isCanvasDragOver ? (

@@ -710,7 +710,7 @@ export function seedNodesForTemplate(templateId: TemplateId): KanvasNode[] {
         note(nid(), "Write docs with visual guide", 310, -120, 220, 120, NOTE_STYLE_SKY, "Plan"),
       ]
     default:
-      return seedDeiLearningPlan().nodes
+      return []
   }
 }
 
