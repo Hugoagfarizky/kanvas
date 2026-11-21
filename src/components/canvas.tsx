@@ -437,6 +437,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
   const clipboard = useRef<{ nodes: Node[]; edges: Edge[] } | null>(null)
 
   const selectedNodes = nodes.filter((node) => node.selected)
+  const selectedEdges = edges.filter((edge) => edge.selected)
 
   function pushHistory() {
     history.current.past.push({ nodes: nodes.map(cloneNode), edges: edges.map(cloneEdge) })
@@ -763,12 +764,47 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
       current.map((node) => {
         if (!node.selected) return node
         const nextData = { ...(node.data as any) }
-        if (patch.style) nextData.style = { ...(nextData.style as any), ...patch.style }
+        if (patch.style) {
+          nextData.style = { ...(nextData.style as any), ...patch.style }
+          nextData.data = { ...(nextData.data as any), userColor: true }
+        }
         if (patch.rotation !== undefined) nextData.rotation = patch.rotation
         if (patch.data) nextData.data = { ...(nextData.data as any), ...patch.data }
         return { ...node, data: nextData }
       }),
     )
+  }
+
+  function updateSelectedEdge(patch: { color?: string; dash?: string; type?: string }) {
+    if (!selectedEdges.length) return
+    pushHistory()
+    setEdges((current) =>
+      current.map((e) => {
+        if (!e.selected) return e
+        const currentStroke = (e.style as any)?.stroke
+        const nextColor = patch.color ?? currentStroke ?? "#10b981"
+        const nextDash = patch.dash !== undefined ? patch.dash : (e.style as any)?.strokeDasharray
+        const nextType = patch.type ?? e.type ?? "smoothstep"
+        const isBlue = nextColor === "#3b82f6" || nextColor.includes("blue")
+        return {
+          ...e,
+          type: nextType,
+          style: {
+            ...e.style,
+            stroke: nextColor,
+            strokeDasharray: nextDash || undefined,
+          },
+          markerEnd: isBlue
+            ? { type: MarkerType.ArrowClosed, color: nextColor, width: 14, height: 14 }
+            : undefined,
+        }
+      }),
+    )
+  }
+
+  function deleteSelectedEdge(edgeId: string) {
+    pushHistory()
+    setEdges((current) => current.filter((e) => e.id !== edgeId))
   }
 
   function alignNodes(mode: "left" | "right" | "centerX" | "top" | "bottom" | "centerY") {
@@ -2344,6 +2380,139 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                       </button>
                     ) : null}
                   </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {/* Connector / Edge Inspector - Positioned top-20 right-6 */}
+          {selectedEdges.length === 1 && selectedNodes.length === 0 ? (
+            <div className="fixed right-6 top-20 z-40 w-76 rounded-3xl border border-border/80 bg-card/95 p-4.5 shadow-2xl backdrop-blur-xl ring-1 ring-border/20 animate-in fade-in slide-in-from-right-3 duration-150">
+              {/* Inspector Header */}
+              <div className="mb-3.5 flex items-center justify-between border-b border-border/60 pb-2.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 capitalize">
+                    Connector Line Style
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setEdges((current) => current.map((e) => ({ ...e, selected: false })))
+                  }
+                  className="rounded-full p-1 text-muted-foreground transition hover:bg-accent hover:text-foreground"
+                  title="Deselect"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {/* Presets for Connector Color */}
+                <div>
+                  <span className="mb-1.5 block text-[11px] font-semibold text-muted-foreground">
+                    Line Color
+                  </span>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {[
+                      { name: "Emerald", color: "#10b981" },
+                      { name: "Sky", color: "#3b82f6" },
+                      { name: "Rose", color: "#f43f5e" },
+                      { name: "Amber", color: "#f59e0b" },
+                      { name: "Purple", color: "#a855f7" },
+                      { name: "Slate", color: "#64748b" },
+                      { name: "White", color: "#f8fafc" },
+                      { name: "Dark", color: "#1e293b" },
+                    ].map((c) => (
+                      <button
+                        key={c.name}
+                        type="button"
+                        onClick={() => updateSelectedEdge({ color: c.color })}
+                        className={cn(
+                          "flex items-center justify-center gap-1 rounded-xl border py-1.5 text-[10px] font-semibold transition hover:scale-105 active:scale-95 shadow-2xs",
+                          ((selectedEdges[0].style as any)?.stroke ?? "#10b981") === c.color &&
+                            "ring-2 ring-primary ring-offset-1 ring-offset-card",
+                        )}
+                        style={{ borderColor: c.color, color: c.color }}
+                      >
+                        <span className="size-2 rounded-full" style={{ backgroundColor: c.color }} />
+                        {c.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Custom ColorRow */}
+                <ColorRow
+                  label="Custom Color"
+                  value={(selectedEdges[0].style as any)?.stroke ?? "#10b981"}
+                  onChange={(val) => updateSelectedEdge({ color: val })}
+                />
+
+                {/* Line Dash / Stroke Pattern */}
+                <div>
+                  <span className="mb-1.5 block text-[11px] font-semibold text-muted-foreground">
+                    Dash Pattern
+                  </span>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {[
+                      { label: "Dashed", dash: "6 6" },
+                      { label: "Dotted", dash: "2 4" },
+                      { label: "Solid", dash: "" },
+                    ].map((st) => (
+                      <button
+                        key={st.label}
+                        type="button"
+                        onClick={() => updateSelectedEdge({ dash: st.dash })}
+                        className={cn(
+                          "rounded-xl border border-border py-1 text-center text-xs font-semibold hover:bg-accent transition",
+                          ((selectedEdges[0].style as any)?.strokeDasharray ?? "") === st.dash &&
+                            "bg-primary/10 text-primary border-primary",
+                        )}
+                      >
+                        {st.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Curve Type */}
+                <div>
+                  <span className="mb-1.5 block text-[11px] font-semibold text-muted-foreground">
+                    Curve Type
+                  </span>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {[
+                      { label: "Smooth", type: "smoothstep" },
+                      { label: "Bezier", type: "bezier" },
+                      { label: "Straight", type: "straight" },
+                    ].map((ct) => (
+                      <button
+                        key={ct.label}
+                        type="button"
+                        onClick={() => updateSelectedEdge({ type: ct.type })}
+                        className={cn(
+                          "rounded-xl border border-border py-1 text-center text-xs font-semibold hover:bg-accent transition",
+                          (selectedEdges[0].type ?? "smoothstep") === ct.type &&
+                            "bg-primary/10 text-primary border-primary",
+                        )}
+                      >
+                        {ct.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Delete Connector Action */}
+                <div className="pt-2 border-t border-border/60">
+                  <button
+                    type="button"
+                    onClick={() => deleteSelectedEdge(selectedEdges[0].id)}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-full border border-destructive/30 bg-destructive/10 py-1.5 text-xs font-semibold text-destructive transition hover:bg-destructive hover:text-white active:scale-95"
+                  >
+                    <Trash2 className="size-3.5" />
+                    Delete Connector
+                  </button>
                 </div>
               </div>
             </div>

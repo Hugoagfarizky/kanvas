@@ -11,6 +11,7 @@ import {
   Maximize2,
   Minimize2,
   MoreHorizontal,
+  Palette,
   Pause,
   Pill,
   Pin,
@@ -34,7 +35,7 @@ import type { NodeStyle, NodeType, Size, TaskItem } from "@/types/board"
 import { cn } from "@/lib/utils"
 import { useHistoryPush } from "@/components/history-context"
 import { useTheme } from "@/lib/theme"
-import { getOptimalMutedColor, isLightColor } from "@/lib/color"
+import { getOptimalMutedColor, getOptimalTextColor, isLightColor, NOTE_PALETTES } from "@/lib/color"
 
 export type KanvasNodeData = {
   kind: NodeType
@@ -125,9 +126,57 @@ export function NoteNode({ id, data, selected }: NodeProps) {
   const { update, remove } = useNodeActions(id)
   const { theme } = useTheme()
 
-  const isDarkCard = !isLightColor(d.style.fill)
-  const textColor = d.style.text || (isDarkCard ? "#f8fafc" : "#1e293b")
+  const isUserColor = Boolean(d.data?.userColor)
+  const hasCustomFill = Boolean(
+    d.style?.fill && d.style.fill !== "#ffffff" && d.style.fill !== "transparent",
+  )
+
+  // Dynamic effective fill, stroke, and text color
+  const effectiveFill = isUserColor
+    ? (d.style?.fill || (theme === "dark" ? "#1a1e29" : "#ffffff"))
+    : hasCustomFill
+      ? d.style.fill
+      : theme === "dark"
+        ? "#1a1e29"
+        : (d.style?.fill || "#ffffff")
+
+  const effectiveStroke = isUserColor
+    ? (d.style?.stroke || (theme === "dark" ? "rgba(255,255,255,0.12)" : "#e2e8f0"))
+    : (d.style?.stroke && d.style.stroke !== "#e2e8f0")
+      ? d.style.stroke
+      : theme === "dark"
+        ? "rgba(255,255,255,0.12)"
+        : (d.style?.stroke || "#e2e8f0")
+
+  const isDarkCard = !isLightColor(effectiveFill)
+  const effectiveText =
+    d.style?.text && isUserColor
+      ? d.style.text
+      : getOptimalTextColor(effectiveFill, theme === "dark")
+  const effectiveMutedText = getOptimalMutedColor(effectiveFill, theme === "dark")
+  const textColor = effectiveText
   const currentTag = d.data?.tag ?? "Note"
+
+  function cyclePalette() {
+    const curFill = (d.style?.fill ?? "").toLowerCase()
+    const currentIdx = NOTE_PALETTES.findIndex(
+      (p) => p.fill.toLowerCase() === curFill,
+    )
+    const nextIdx = (currentIdx + 1) % NOTE_PALETTES.length
+    const nextPal = NOTE_PALETTES[nextIdx]
+    update({
+      style: {
+        ...d.style,
+        fill: nextPal.fill,
+        stroke: nextPal.stroke,
+        text: nextPal.text,
+      },
+      data: {
+        ...d.data,
+        userColor: true,
+      },
+    })
+  }
 
   function cycleTag() {
     const nextIdx = (NOTE_TAGS.indexOf(currentTag) + 1) % NOTE_TAGS.length
@@ -151,9 +200,11 @@ export function NoteNode({ id, data, selected }: NodeProps) {
       <NodeFrame
         selected={selected}
         style={{
-          background: theme === "dark" ? "#161922" : "#ffffff",
-          color: theme === "dark" ? "#f8fafc" : "#0f172a",
-          border: `1.5px solid ${theme === "dark" ? "rgba(255,255,255,0.12)" : "#e2e8f0"}`,
+          background: isUserColor ? effectiveFill : (theme === "dark" ? "#161922" : "#ffffff"),
+          color: isUserColor ? effectiveText : (theme === "dark" ? "#f8fafc" : "#0f172a"),
+          border: isUserColor
+            ? `1.5px solid ${effectiveStroke}`
+            : `1.5px solid ${theme === "dark" ? "rgba(255,255,255,0.12)" : "#e2e8f0"}`,
           borderRadius: 28,
           boxShadow:
             theme === "dark"
@@ -253,9 +304,11 @@ export function NoteNode({ id, data, selected }: NodeProps) {
       <NodeFrame
         selected={selected}
         style={{
-          background: theme === "dark" ? "#1a1e29" : "#ffffff",
-          color: theme === "dark" ? "#f8fafc" : "#0f172a",
-          border: `1.5px solid ${theme === "dark" ? "rgba(255,255,255,0.12)" : "#e2e8f0"}`,
+          background: isUserColor ? effectiveFill : (theme === "dark" ? "#1a1e29" : "#ffffff"),
+          color: isUserColor ? effectiveText : (theme === "dark" ? "#f8fafc" : "#0f172a"),
+          border: isUserColor
+            ? `1.5px solid ${effectiveStroke}`
+            : `1.5px solid ${theme === "dark" ? "rgba(255,255,255,0.12)" : "#e2e8f0"}`,
           borderRadius: 24,
           boxShadow:
             theme === "dark"
@@ -316,9 +369,11 @@ export function NoteNode({ id, data, selected }: NodeProps) {
       <NodeFrame
         selected={selected}
         style={{
-          background: theme === "dark" ? "#1a1e29" : "#ffffff",
-          color: theme === "dark" ? "#f8fafc" : "#0f172a",
-          border: `1.5px solid ${theme === "dark" ? "rgba(255,255,255,0.12)" : "#e2e8f0"}`,
+          background: isUserColor ? effectiveFill : (theme === "dark" ? "#1a1e29" : "#ffffff"),
+          color: isUserColor ? effectiveText : (theme === "dark" ? "#f8fafc" : "#0f172a"),
+          border: isUserColor
+            ? `1.5px solid ${effectiveStroke}`
+            : `1.5px solid ${theme === "dark" ? "rgba(255,255,255,0.12)" : "#e2e8f0"}`,
           borderRadius: 24,
           boxShadow:
             theme === "dark"
@@ -369,9 +424,11 @@ export function NoteNode({ id, data, selected }: NodeProps) {
       <NodeFrame
         selected={selected}
         style={{
-          background: theme === "dark" ? "#1a1e29" : "#ffffff",
-          color: theme === "dark" ? "#f8fafc" : "#0f172a",
-          border: `1.5px solid ${theme === "dark" ? "rgba(255,255,255,0.12)" : "#e2e8f0"}`,
+          background: isUserColor ? effectiveFill : (theme === "dark" ? "#1a1e29" : "#ffffff"),
+          color: isUserColor ? effectiveText : (theme === "dark" ? "#f8fafc" : "#0f172a"),
+          border: isUserColor
+            ? `1.5px solid ${effectiveStroke}`
+            : `1.5px solid ${theme === "dark" ? "rgba(255,255,255,0.12)" : "#e2e8f0"}`,
           borderRadius: 24,
           boxShadow:
             theme === "dark"
@@ -488,9 +545,11 @@ export function NoteNode({ id, data, selected }: NodeProps) {
       <NodeFrame
         selected={selected}
         style={{
-          background: theme === "dark" ? "#1a1e29" : "#ffffff",
-          color: theme === "dark" ? "#f8fafc" : "#0f172a",
-          border: `1.5px solid ${theme === "dark" ? "rgba(255,255,255,0.12)" : "#e2e8f0"}`,
+          background: isUserColor ? effectiveFill : (theme === "dark" ? "#1a1e29" : "#ffffff"),
+          color: isUserColor ? effectiveText : (theme === "dark" ? "#f8fafc" : "#0f172a"),
+          border: isUserColor
+            ? `1.5px solid ${effectiveStroke}`
+            : `1.5px solid ${theme === "dark" ? "rgba(255,255,255,0.12)" : "#e2e8f0"}`,
           borderRadius: 24,
           boxShadow:
             theme === "dark"
@@ -590,16 +649,24 @@ export function NoteNode({ id, data, selected }: NodeProps) {
   // --- 1. MEDIA BENTO CARD (Pharmacology Basics archetype) ---
   if (d.data?.isMedia) {
     const isPlaying = Boolean(d.data?.isPlaying)
+    const mediaBg = isUserColor
+      ? effectiveFill
+      : theme === "dark"
+        ? "linear-gradient(135deg, #3b0764 0%, #4a044e 50%, #581c87 100%)"
+        : "linear-gradient(135deg, #f3e8ff 0%, #f5d0fe 50%, #e9d5ff 100%)"
+    const mediaText = isUserColor ? effectiveText : (theme === "dark" ? "#fdf4ff" : "#4a044e")
+    const mediaMuted = isUserColor ? effectiveMutedText : (theme === "dark" ? "#e9d5ff" : "#581c87")
+    const mediaBorder = isUserColor
+      ? `2px solid ${effectiveStroke}`
+      : `2px solid ${d.style.stroke || "#d8b4fe"}`
+
     return (
       <NodeFrame
         selected={selected}
         style={{
-          background:
-            theme === "dark"
-              ? "linear-gradient(135deg, #3b0764 0%, #4a044e 50%, #581c87 100%)"
-              : "linear-gradient(135deg, #f3e8ff 0%, #f5d0fe 50%, #e9d5ff 100%)",
-          color: theme === "dark" ? "#fdf4ff" : "#4a044e",
-          border: `2px solid ${d.style.stroke || "#d8b4fe"}`,
+          background: mediaBg,
+          color: mediaText,
+          border: mediaBorder,
           borderRadius: 28,
           boxShadow:
             theme === "dark"
@@ -616,7 +683,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
                 value={d.data?.title ?? "Pharmacology Basics"}
                 onChange={(e) => update({ data: { ...d.data, title: e.target.value } })}
                 className="w-full bg-transparent font-sans text-base font-bold tracking-tight outline-none"
-                style={{ color: theme === "dark" ? "#fdf4ff" : "#4a044e" }}
+                style={{ color: mediaText }}
                 spellCheck={false}
               />
               <textarea
@@ -626,28 +693,39 @@ export function NoteNode({ id, data, selected }: NodeProps) {
                 }
                 placeholder="Learn medical language..."
                 className="mt-1 h-11 w-full resize-none bg-transparent text-xs leading-relaxed opacity-85 outline-none placeholder:opacity-40"
-                style={{ color: theme === "dark" ? "#e9d5ff" : "#581c87" }}
+                style={{ color: mediaMuted }}
                 spellCheck={false}
               />
             </div>
 
-            {/* Circular Play / Wave Button */}
-            <div className="relative shrink-0">
-              {isPlaying ? (
-                <span className="absolute -inset-1.5 animate-ping rounded-full border-2 border-purple-400 opacity-60" />
-              ) : null}
+            {/* Circular Play / Wave Button & Color Palette */}
+            <div className="relative shrink-0 flex items-center gap-1.5">
               <button
                 type="button"
-                onClick={() => update({ data: { ...d.data, isPlaying: !isPlaying } })}
-                className="relative flex size-12 items-center justify-center rounded-full bg-white text-purple-600 shadow-md transition hover:scale-110 active:scale-95 dark:bg-purple-950 dark:text-purple-200"
-                title={isPlaying ? "Pause audio" : "Play audio course"}
+                onClick={cyclePalette}
+                className="rounded-full p-1.5 transition hover:bg-black/10 hover:scale-110 active:scale-95"
+                style={{ color: mediaText }}
+                title="Change card color"
               >
-                {isPlaying ? (
-                  <Pause className="size-5 fill-current" />
-                ) : (
-                  <Play className="size-5 fill-current pl-0.5" />
-                )}
+                <Palette className="size-4" />
               </button>
+              <div className="relative shrink-0">
+                {isPlaying ? (
+                  <span className="absolute -inset-1.5 animate-ping rounded-full border-2 border-purple-400 opacity-60" />
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => update({ data: { ...d.data, isPlaying: !isPlaying } })}
+                  className="relative flex size-12 items-center justify-center rounded-full bg-white text-purple-600 shadow-md transition hover:scale-110 active:scale-95 dark:bg-purple-950 dark:text-purple-200"
+                  title={isPlaying ? "Pause audio" : "Play audio course"}
+                >
+                  {isPlaying ? (
+                    <Pause className="size-5 fill-current" />
+                  ) : (
+                    <Play className="size-5 fill-current pl-0.5" />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -683,9 +761,9 @@ export function NoteNode({ id, data, selected }: NodeProps) {
       <NodeFrame
         selected={selected}
         style={{
-          background: theme === "dark" ? "#1a1e29" : "#ffffff",
-          color: theme === "dark" ? "#f8fafc" : "#0f172a",
-          border: `1.5px solid ${theme === "dark" ? "rgba(255,255,255,0.12)" : "#e2e8f0"}`,
+          background: effectiveFill,
+          color: effectiveText,
+          border: `1.5px solid ${effectiveStroke}`,
           borderRadius: 28,
           boxShadow:
             theme === "dark"
@@ -703,6 +781,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
                 onChange={(e) => update({ data: { ...d.data, title: e.target.value } })}
                 placeholder="Step title"
                 className="w-full bg-transparent font-sans text-base font-bold tracking-tight outline-none placeholder:opacity-40"
+                style={{ color: effectiveText }}
                 spellCheck={false}
               />
               <textarea
@@ -711,7 +790,8 @@ export function NoteNode({ id, data, selected }: NodeProps) {
                   update({ data: { ...d.data, subtitle: e.target.value, text: e.target.value } })
                 }
                 placeholder="Learn medical language..."
-                className="mt-1.5 h-11 w-full resize-none bg-transparent text-xs leading-relaxed text-muted-foreground outline-none placeholder:opacity-40"
+                className="mt-1.5 h-11 w-full resize-none bg-transparent text-xs leading-relaxed outline-none placeholder:opacity-40"
+                style={{ color: effectiveMutedText }}
                 spellCheck={false}
               />
             </div>
@@ -743,8 +823,16 @@ export function NoteNode({ id, data, selected }: NodeProps) {
               <span>{isCompleted ? "Completed" : "Upcoming"}</span>
             </button>
 
-            {/* Actions: ... (cycle tag), X (delete), ✓ (toggle done) */}
+            {/* Actions: Palette (change color), ... (cycle tag), X (delete), ✓ (toggle done) */}
             <div className="flex items-center gap-1 text-muted-foreground">
+              <button
+                type="button"
+                onClick={cyclePalette}
+                className="rounded-full p-1 transition hover:bg-accent hover:text-foreground active:scale-95"
+                title="Change card color (cycle palette)"
+              >
+                <Palette className="size-3.5" />
+              </button>
               <button
                 type="button"
                 onClick={cycleTag}
