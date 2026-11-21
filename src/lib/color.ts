@@ -107,26 +107,26 @@ export function getOptimalMutedColor(bgColor: string, isDarkMode = false): strin
   return isLightColor(bgColor) ? "#64748b" : "#94a3b8"
 }
 
-// Preset color palettes
+// Preset color palettes inspired by modern bento/pill canvas UI (Lilac, Mint, Butter, Sky, Peach)
 export const NOTE_PALETTES = [
-  { name: "Yellow", fill: "#fef08a", stroke: "#eab308", text: "#1e293b" },
-  { name: "Blue", fill: "#bae6fd", stroke: "#38bdf8", text: "#0f172a" },
-  { name: "Green", fill: "#bbf7d0", stroke: "#4ade80", text: "#064e3b" },
-  { name: "Rose", fill: "#fbcfe8", stroke: "#f472b6", text: "#831843" },
-  { name: "Purple", fill: "#e9d5ff", stroke: "#c084fc", text: "#581c87" },
-  { name: "Orange", fill: "#fed7aa", stroke: "#fb923c", text: "#7c2d12" },
-  { name: "White", fill: "#ffffff", stroke: "#cbd5e1", text: "#0f172a" },
-  { name: "Dark", fill: "#1e293b", stroke: "#475569", text: "#f8fafc" },
+  { name: "Butter", fill: "#fef9c3", stroke: "#fde047", text: "#713f12", tag: "Task 📋" },
+  { name: "Lilac", fill: "#f3e8ff", stroke: "#d8b4fe", text: "#581c87", tag: "Idea 💡" },
+  { name: "Mint", fill: "#ecfdf5", stroke: "#a7f3d0", text: "#065f46", tag: "Done 🌿" },
+  { name: "Sky", fill: "#f0f9ff", stroke: "#bae6fd", text: "#0369a1", tag: "Plan 🎯" },
+  { name: "Peach", fill: "#fff1f2", stroke: "#fecdd3", text: "#9f1239", tag: "Note 📌" },
+  { name: "Coral", fill: "#ffedd5", stroke: "#fed7aa", text: "#9a3412", tag: "Notice ⚠️" },
+  { name: "White", fill: "#ffffff", stroke: "#e2e8f0", text: "#0f172a", tag: "Card 📄" },
+  { name: "Dark", fill: "#1e222d", stroke: "#333d4f", text: "#f8fafc", tag: "Dark 🌙" },
 ]
 
 export const SHAPE_PALETTES = [
-  { name: "Sky", fill: "#dbeafe", stroke: "#3b82f6", text: "#1e293b" },
-  { name: "Emerald", fill: "#d1fae5", stroke: "#10b981", text: "#064e3b" },
-  { name: "Amber", fill: "#fef3c7", stroke: "#f59e0b", text: "#78350f" },
-  { name: "Purple", fill: "#f3e8ff", stroke: "#a855f7", text: "#581c87" },
-  { name: "Rose", fill: "#ffe4e6", stroke: "#f43f5e", text: "#881337" },
+  { name: "Sky", fill: "#f0f9ff", stroke: "#38bdf8", text: "#0369a1" },
+  { name: "Lilac", fill: "#f3e8ff", stroke: "#c084fc", text: "#581c87" },
+  { name: "Mint", fill: "#ecfdf5", stroke: "#34d399", text: "#065f46" },
+  { name: "Butter", fill: "#fef9c3", stroke: "#facc15", text: "#713f12" },
+  { name: "Peach", fill: "#fff1f2", stroke: "#fb7185", text: "#9f1239" },
   { name: "White", fill: "#ffffff", stroke: "#cbd5e1", text: "#0f172a" },
-  { name: "Dark", fill: "#1e293b", stroke: "#475569", text: "#f8fafc" },
+  { name: "Dark", fill: "#1e222d", stroke: "#475569", text: "#f8fafc" },
   { name: "Clear", fill: "transparent", stroke: "#94a3b8", text: "var(--foreground)" },
 ]
 

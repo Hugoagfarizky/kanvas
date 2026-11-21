@@ -1,12 +1,12 @@
 import {
   Background,
   BackgroundVariant,
-  Controls,
   MiniMap,
   ReactFlow,
   ReactFlowProvider,
   addEdge,
   useReactFlow,
+  useViewport,
   ViewportPortal,
   type Edge,
   type Node,
@@ -22,6 +22,8 @@ import {
   AlignRight,
   AlignStartVertical,
   AlignVerticalDistributeCenter,
+  Check,
+  ChevronDown,
   Circle,
   Copy,
   Diamond,
@@ -30,6 +32,7 @@ import {
   Hand,
   Highlighter,
   ListTodo,
+  MapPin,
   Maximize2,
   Minimize2,
   MousePointer2,
@@ -100,7 +103,7 @@ const DEFAULT_SIZES: Record<NodeType, Size> = {
 function getDefaultStyles(theme: "light" | "dark"): Record<NodeType, NodeStyle> {
   const isDark = theme === "dark"
   return {
-    note: { fill: "#fef08a", stroke: "#eab308", text: "#1e293b", fontSize: 14 },
+    note: { fill: "#fef9c3", stroke: "#fde047", text: "#713f12", fontSize: 14 },
     text: {
       fill: "transparent",
       stroke: "transparent",
@@ -108,12 +111,12 @@ function getDefaultStyles(theme: "light" | "dark"): Record<NodeType, NodeStyle> 
       fontSize: 18,
     },
     task: {
-      fill: isDark ? "#1e293b" : "#ffffff",
-      stroke: isDark ? "#334155" : "#cbd5e1",
+      fill: isDark ? "#1e222d" : "#ffffff",
+      stroke: isDark ? "#333d4f" : "#e2e8f0",
       text: isDark ? "#f8fafc" : "#0f172a",
       fontSize: 13,
     },
-    shape: { fill: "#dbeafe", stroke: "#3b82f6", text: "#0f172a", fontSize: 14 },
+    shape: { fill: "#f0f9ff", stroke: "#38bdf8", text: "#0369a1", fontSize: 14 },
     frame: {
       fill: "rgba(148,163,184,0.08)",
       stroke: isDark ? "#475569" : "#94a3b8",
@@ -121,7 +124,7 @@ function getDefaultStyles(theme: "light" | "dark"): Record<NodeType, NodeStyle> 
       fontSize: 12,
     },
     image: {
-      fill: isDark ? "#1e293b" : "#f8fafc",
+      fill: isDark ? "#1e222d" : "#ffffff",
       stroke: isDark ? "#334155" : "#e2e8f0",
       text: isDark ? "#94a3b8" : "#64748b",
       fontSize: 12,
@@ -263,6 +266,9 @@ export function BoardCanvas(props: CanvasProps) {
 function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
   const reactFlow = useReactFlow()
   const { theme } = useTheme()
+  const { zoom } = useViewport()
+  const [showMiniMap, setShowMiniMap] = useState(false)
+  const [showZoomMenu, setShowZoomMenu] = useState(false)
 
   const [nodes, setNodes] = useState<Node[]>(() => board.nodes.map(toFlowNode))
   const [edges, setEdges] = useState<Edge[]>(() => board.edges.map(toFlowEdge))
@@ -561,10 +567,11 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
     const id = createId("node")
     const size = DEFAULT_SIZES[kind]
     const defaultStyles = getDefaultStyles(theme)
+    const offset = nodes.length > 0 ? (nodes.length % 6) * 36 : 0
     const newNode: Node = {
       id,
       type: `kanvas-${kind}`,
-      position: { x: center.x - size.width / 2, y: center.y - size.height / 2 },
+      position: { x: center.x - size.width / 2 + offset, y: center.y - size.height / 2 + offset },
       width: size.width,
       height: size.height,
       style: { width: size.width, height: size.height },
@@ -887,26 +894,9 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
         >
           <Background
             variant={BackgroundVariant.Dots}
-            gap={22}
-            size={1.25}
+            gap={20}
+            size={1.2}
             color="var(--grid-dot)"
-          />
-          <Controls
-            showZoom
-            showFitView
-            showInteractive={false}
-            className="!border-border !bg-card/90 !shadow-md backdrop-blur-md [&_button]:!border-border [&_button]:!bg-card [&_button]:!text-foreground"
-          />
-          <MiniMap
-            className="!border-border !bg-card/85 !shadow-md backdrop-blur-sm"
-            nodeColor={() => (theme === "dark" ? "#64748b" : "#94a3b8")}
-            maskColor={
-              theme === "dark"
-                ? "rgba(15, 23, 42, 0.65)"
-                : "rgba(247, 245, 239, 0.65)"
-            }
-            pannable
-            zoomable
           />
           <ViewportPortal>
             <svg
@@ -949,8 +939,169 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
           </div>
         ) : null}
 
-        {/* Primary Unified Toolbar (Top-Center Floating Dock) */}
-        <div className="absolute left-1/2 top-4 z-40 -translate-x-1/2 flex items-center gap-1 rounded-2xl border border-border/80 bg-card/95 p-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-md transition">
+        {/* Toggleable MiniMap Floating Overview */}
+        {showMiniMap ? (
+          <div className="fixed bottom-20 right-6 z-40 overflow-hidden rounded-2xl border border-border/80 bg-card/95 p-1 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150 ring-1 ring-border/20">
+            <div className="flex items-center justify-between border-b border-border/60 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <span>Overview</span>
+              <button
+                type="button"
+                onClick={() => setShowMiniMap(false)}
+                className="rounded p-0.5 text-muted-foreground transition hover:bg-accent hover:text-foreground"
+                title="Close MiniMap"
+              >
+                <X className="size-3" />
+              </button>
+            </div>
+            <MiniMap
+              className="!m-0 !h-28 !w-44 !border-0 !bg-transparent"
+              nodeColor={() => (theme === "dark" ? "#64748b" : "#94a3b8")}
+              maskColor={
+                theme === "dark"
+                  ? "rgba(15, 23, 42, 0.65)"
+                  : "rgba(247, 245, 239, 0.65)"
+              }
+              pannable
+              zoomable
+            />
+          </div>
+        ) : null}
+
+        {/* Bottom-Right Viewport & Zoom Dock (Ref 2 inspired) */}
+        <div className="fixed bottom-6 right-6 z-40 flex items-center gap-1 rounded-full border border-border/80 bg-card/90 p-1.5 shadow-2xl backdrop-blur-xl ring-1 ring-border/20">
+          {/* Zoom Percentage Dropdown Trigger */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowZoomMenu((prev) => !prev)}
+              className="flex h-8 items-center gap-1 rounded-full px-2.5 text-xs font-semibold text-foreground transition hover:bg-accent active:scale-95"
+              title="Zoom Level (Click for presets)"
+            >
+              <span>{Math.round(zoom * 100)}%</span>
+              <ChevronDown className="size-3 text-muted-foreground" />
+            </button>
+
+            {showZoomMenu ? (
+              <div className="absolute bottom-11 right-0 min-w-36 rounded-2xl border border-border/80 bg-card/95 p-1.5 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    reactFlow.zoomIn({ duration: 150 })
+                    setShowZoomMenu(false)
+                  }}
+                  className="flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs text-foreground transition hover:bg-accent"
+                >
+                  <span>Zoom In</span>
+                  <span className="text-[10px] text-muted-foreground">+</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    reactFlow.zoomOut({ duration: 150 })
+                    setShowZoomMenu(false)
+                  }}
+                  className="flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs text-foreground transition hover:bg-accent"
+                >
+                  <span>Zoom Out</span>
+                  <span className="text-[10px] text-muted-foreground">-</span>
+                </button>
+                <span className="my-1 block h-px bg-border/60" />
+                {[50, 100, 150, 200].map((pct) => (
+                  <button
+                    key={pct}
+                    type="button"
+                    onClick={() => {
+                      reactFlow.zoomTo(pct / 100, { duration: 150 })
+                      setShowZoomMenu(false)
+                    }}
+                    className="flex w-full items-center justify-between rounded-xl px-2.5 py-1 text-xs text-foreground transition hover:bg-accent"
+                  >
+                    <span>{pct}%</span>
+                    {Math.round(zoom * 100) === pct ? (
+                      <Check className="size-3 text-primary" />
+                    ) : null}
+                  </button>
+                ))}
+                <span className="my-1 block h-px bg-border/60" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (nodes.length > 0) void reactFlow.fitView({ duration: 200, padding: 0.2 })
+                    else reactFlow.setViewport({ x: 0, y: 0, zoom: 1 }, { duration: 200 })
+                    setShowZoomMenu(false)
+                  }}
+                  className="flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs text-foreground transition hover:bg-accent"
+                >
+                  <span>Fit to Screen</span>
+                  <span className="text-[10px] text-muted-foreground">0</span>
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          <span className="h-4 w-px bg-border/70" />
+
+          {/* Pan Tool */}
+          <button
+            type="button"
+            onClick={() => setTool("hand")}
+            className={cn(
+              "flex size-8 items-center justify-center rounded-full transition",
+              tool === "hand"
+                ? "bg-primary text-primary-foreground shadow-xs scale-105"
+                : "text-muted-foreground hover:bg-accent hover:text-foreground",
+            )}
+            title="Pan canvas (H)"
+          >
+            <Hand className="size-4" />
+          </button>
+
+          {/* Pointer Tool */}
+          <button
+            type="button"
+            onClick={() => setTool("select")}
+            className={cn(
+              "flex size-8 items-center justify-center rounded-full transition",
+              tool === "select"
+                ? "bg-primary text-primary-foreground shadow-xs scale-105"
+                : "text-muted-foreground hover:bg-accent hover:text-foreground",
+            )}
+            title="Select (V)"
+          >
+            <MousePointer2 className="size-4" />
+          </button>
+
+          {/* Fit View */}
+          <button
+            type="button"
+            onClick={() => {
+              if (nodes.length > 0) void reactFlow.fitView({ duration: 200, padding: 0.2 })
+              else reactFlow.setViewport({ x: 0, y: 0, zoom: 1 }, { duration: 200 })
+            }}
+            className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-accent hover:text-foreground"
+            title="Fit to view (0)"
+          >
+            <Maximize2 className="size-4" />
+          </button>
+
+          {/* MiniMap Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowMiniMap((v) => !v)}
+            className={cn(
+              "flex size-8 items-center justify-center rounded-full transition",
+              showMiniMap
+                ? "bg-accent text-accent-foreground font-semibold shadow-xs"
+                : "text-muted-foreground hover:bg-accent hover:text-foreground",
+            )}
+            title={showMiniMap ? "Hide MiniMap" : "Show MiniMap"}
+          >
+            <MapPin className="size-4" />
+          </button>
+        </div>
+
+        {/* Primary Sculpted Pill Dock (Bottom-Center, inspired by Ref 3 & Ref 1) */}
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1 rounded-full border border-border/80 bg-card/90 px-3 py-1.5 shadow-2xl backdrop-blur-xl ring-1 ring-border/20 transition-all">
           {/* Navigation & Selection */}
           <ToolbarButton
             active={tool === "select"}
@@ -967,7 +1118,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
 
           <span className="mx-1 h-5 w-px bg-border/70" />
 
-          {/* Creation Primitives */}
+          {/* Creation Primitives with Pastel Accents */}
           <ToolbarButton
             onClick={() => {
               setTool("select")
@@ -990,7 +1141,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
               addNode("task")
             }}
             icon={<ListTodo className="size-4 text-sky-500" />}
-            title="Task List"
+            title="Task Checklist"
           />
           <ToolbarButton
             onClick={() => {
@@ -1059,12 +1210,12 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
           />
         </div>
 
-        {/* Secondary Toolbar: Drawing Tools Customizer */}
+        {/* Secondary Toolbar: Drawing Tools Customizer (Floating above bottom dock) */}
         {isDrawingTool(tool) ? (
-          <div className="absolute left-1/2 top-16 z-40 -translate-x-1/2 flex items-center gap-2 rounded-xl border border-border/80 bg-card/95 px-3 py-1.5 shadow-md backdrop-blur-md animate-in fade-in slide-in-from-top-1 duration-150">
+          <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2.5 rounded-full border border-border/80 bg-card/95 px-4 py-2 shadow-2xl backdrop-blur-xl ring-1 ring-border/20 animate-in fade-in slide-in-from-bottom-2 duration-150">
             {tool === "pen" ? (
               <>
-                <span className="text-[11px] font-medium text-muted-foreground">Ink:</span>
+                <span className="text-[11px] font-semibold text-muted-foreground">Ink:</span>
                 <div className="flex items-center gap-1.5">
                   {PEN_COLORS.map((p) => {
                     const active = penColor === (p.color ?? "auto")
@@ -1077,8 +1228,8 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                         onClick={() => setPenColor(p.color ?? "auto")}
                         title={p.name}
                         className={cn(
-                          "size-5.5 rounded-full border border-border/80 transition hover:scale-110",
-                          active && "ring-2 ring-primary ring-offset-2 ring-offset-background scale-110",
+                          "size-6 rounded-full border border-border/80 transition hover:scale-110 active:scale-95",
+                          active && "ring-2 ring-primary ring-offset-2 ring-offset-card scale-110",
                         )}
                         style={{ backgroundColor: displayColor }}
                       />
@@ -1086,9 +1237,9 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                   })}
                 </div>
 
-                <span className="mx-1.5 h-4 w-px bg-border" />
+                <span className="mx-1 h-4 w-px bg-border/70" />
 
-                <span className="text-[11px] font-medium text-muted-foreground">Size:</span>
+                <span className="text-[11px] font-semibold text-muted-foreground">Size:</span>
                 {[
                   { label: "S", size: 2 },
                   { label: "M", size: 4 },
@@ -1099,9 +1250,9 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                     type="button"
                     onClick={() => setPenSize(s.size)}
                     className={cn(
-                      "rounded-md px-2 py-0.5 text-xs font-medium transition",
+                      "rounded-full px-2.5 py-0.5 text-xs font-semibold transition",
                       penSize === s.size
-                        ? "bg-primary text-primary-foreground font-semibold"
+                        ? "bg-primary text-primary-foreground shadow-xs"
                         : "text-muted-foreground hover:bg-accent hover:text-foreground",
                     )}
                   >
@@ -1113,7 +1264,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
 
             {tool === "highlighter" ? (
               <>
-                <span className="text-[11px] font-medium text-muted-foreground">Color:</span>
+                <span className="text-[11px] font-semibold text-muted-foreground">Color:</span>
                 <div className="flex items-center gap-1.5">
                   {HIGHLIGHTER_COLORS.map((h) => {
                     const active = highlighterColor === h.color
@@ -1124,8 +1275,8 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                         onClick={() => setHighlighterColor(h.color)}
                         title={h.name}
                         className={cn(
-                          "size-5.5 rounded-full border border-border/80 transition hover:scale-110",
-                          active && "ring-2 ring-primary ring-offset-2 ring-offset-background scale-110",
+                          "size-6 rounded-full border border-border/80 transition hover:scale-110 active:scale-95",
+                          active && "ring-2 ring-primary ring-offset-2 ring-offset-card scale-110",
                         )}
                         style={{ backgroundColor: h.color }}
                       />
@@ -1133,9 +1284,9 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                   })}
                 </div>
 
-                <span className="mx-1.5 h-4 w-px bg-border" />
+                <span className="mx-1 h-4 w-px bg-border/70" />
 
-                <span className="text-[11px] font-medium text-muted-foreground">Width:</span>
+                <span className="text-[11px] font-semibold text-muted-foreground">Width:</span>
                 {[
                   { label: "M", size: 12 },
                   { label: "L", size: 20 },
@@ -1145,9 +1296,9 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                     type="button"
                     onClick={() => setHighlighterSize(s.size)}
                     className={cn(
-                      "rounded-md px-2 py-0.5 text-xs font-medium transition",
+                      "rounded-full px-2.5 py-0.5 text-xs font-semibold transition",
                       highlighterSize === s.size
-                        ? "bg-primary text-primary-foreground font-semibold"
+                        ? "bg-primary text-primary-foreground shadow-xs"
                         : "text-muted-foreground hover:bg-accent hover:text-foreground",
                     )}
                   >
@@ -1159,7 +1310,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
 
             {tool === "eraser" ? (
               <>
-                <span className="text-[11px] font-medium text-muted-foreground">Eraser Size:</span>
+                <span className="text-[11px] font-semibold text-muted-foreground">Eraser:</span>
                 {[
                   { label: "Fine", radius: 8 },
                   { label: "Normal", radius: 14 },
@@ -1170,9 +1321,9 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                     type="button"
                     onClick={() => setEraserRadius(s.radius)}
                     className={cn(
-                      "rounded-md px-2 py-0.5 text-xs font-medium transition",
+                      "rounded-full px-2.5 py-0.5 text-xs font-semibold transition",
                       eraserRadius === s.radius
-                        ? "bg-primary text-primary-foreground font-semibold"
+                        ? "bg-primary text-primary-foreground shadow-xs"
                         : "text-muted-foreground hover:bg-accent hover:text-foreground",
                     )}
                   >
@@ -1181,16 +1332,26 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                 ))}
               </>
             ) : null}
+
+            <span className="mx-1 h-4 w-px bg-border/70" />
+            <button
+              type="button"
+              onClick={() => setTool("select")}
+              className="flex size-6 items-center justify-center rounded-full text-muted-foreground transition hover:bg-accent hover:text-foreground"
+              title="Done drawing (Esc / V)"
+            >
+              <X className="size-3.5" />
+            </button>
           </div>
         ) : null}
 
         {/* Multi-Selection Arrange Toolbar */}
         {selectedNodes.length >= 2 ? (
-          <div className="absolute left-1/2 top-16 z-40 -translate-x-1/2 flex items-center gap-1 rounded-xl border border-border/80 bg-card/95 p-1 shadow-md backdrop-blur-md animate-in fade-in slide-in-from-top-1 duration-150">
+          <div className="fixed top-20 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1 rounded-full border border-border/80 bg-card/95 px-3 py-1.5 shadow-2xl backdrop-blur-xl ring-1 ring-border/20 animate-in fade-in slide-in-from-top-2 duration-150">
             <button
               type="button"
               onClick={() => alignNodes("left")}
-              className="flex size-7 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-accent hover:text-foreground"
+              className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-accent hover:text-foreground hover:scale-105"
               title="Align Left"
             >
               <AlignLeft className="size-4" />
@@ -1198,7 +1359,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
             <button
               type="button"
               onClick={() => alignNodes("centerX")}
-              className="flex size-7 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-accent hover:text-foreground"
+              className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-accent hover:text-foreground hover:scale-105"
               title="Align Center Horizontally"
             >
               <AlignCenterHorizontal className="size-4" />
@@ -1206,18 +1367,18 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
             <button
               type="button"
               onClick={() => alignNodes("right")}
-              className="flex size-7 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-accent hover:text-foreground"
+              className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-accent hover:text-foreground hover:scale-105"
               title="Align Right"
             >
               <AlignRight className="size-4" />
             </button>
 
-            <span className="mx-1 h-4 w-px bg-border" />
+            <span className="mx-1 h-4 w-px bg-border/70" />
 
             <button
               type="button"
               onClick={() => alignNodes("top")}
-              className="flex size-7 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-accent hover:text-foreground"
+              className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-accent hover:text-foreground hover:scale-105"
               title="Align Top"
             >
               <AlignStartVertical className="size-4" />
@@ -1225,7 +1386,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
             <button
               type="button"
               onClick={() => alignNodes("centerY")}
-              className="flex size-7 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-accent hover:text-foreground"
+              className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-accent hover:text-foreground hover:scale-105"
               title="Align Middle Vertically"
             >
               <AlignCenterVertical className="size-4" />
@@ -1233,7 +1394,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
             <button
               type="button"
               onClick={() => alignNodes("bottom")}
-              className="flex size-7 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-accent hover:text-foreground"
+              className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-accent hover:text-foreground hover:scale-105"
               title="Align Bottom"
             >
               <AlignEndVertical className="size-4" />
@@ -1241,11 +1402,11 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
 
             {selectedNodes.length >= 3 ? (
               <>
-                <span className="mx-1 h-4 w-px bg-border" />
+                <span className="mx-1 h-4 w-px bg-border/70" />
                 <button
                   type="button"
                   onClick={() => distributeNodes("horizontal")}
-                  className="flex size-7 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-accent hover:text-foreground"
+                  className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-accent hover:text-foreground hover:scale-105"
                   title="Distribute Horizontally"
                 >
                   <AlignHorizontalDistributeCenter className="size-4" />
@@ -1253,7 +1414,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                 <button
                   type="button"
                   onClick={() => distributeNodes("vertical")}
-                  className="flex size-7 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-accent hover:text-foreground"
+                  className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-accent hover:text-foreground hover:scale-105"
                   title="Distribute Vertically"
                 >
                   <AlignVerticalDistributeCenter className="size-4" />
@@ -1263,13 +1424,13 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
           </div>
         ) : null}
 
-        {/* Style Panel (Node Inspector) - Positioned at top-20 right-4 away from MiniMap */}
+        {/* Style Panel (Node Inspector) - Positioned top-20 right-6 */}
         {selectedNodes.length === 1 ? (
-          <div className="absolute right-4 top-20 z-40 w-72 rounded-2xl border border-border/80 bg-card/95 p-4 shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-right-2 duration-150">
+          <div className="fixed right-6 top-20 z-40 w-76 rounded-3xl border border-border/80 bg-card/95 p-4.5 shadow-2xl backdrop-blur-xl ring-1 ring-border/20 animate-in fade-in slide-in-from-right-3 duration-150">
             {/* Inspector Header */}
-            <div className="mb-3.5 flex items-center justify-between border-b border-border/60 pb-2">
+            <div className="mb-3.5 flex items-center justify-between border-b border-border/60 pb-2.5">
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-semibold text-primary capitalize">
                   {(selectedNodes[0].data as any).kind ?? "Node"} Style
                 </span>
               </div>
@@ -1280,7 +1441,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                     current.map((n) => ({ ...n, selected: false })),
                   )
                 }
-                className="rounded-md p-1 text-muted-foreground transition hover:bg-accent hover:text-foreground"
+                className="rounded-full p-1 text-muted-foreground transition hover:bg-accent hover:text-foreground"
                 title="Deselect"
               >
                 <X className="size-3.5" />
@@ -1291,7 +1452,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
               {/* Presets for notes & shapes */}
               {(selectedNodes[0].data as any).kind === "note" ? (
                 <div>
-                  <span className="mb-1.5 block text-[11px] font-medium text-muted-foreground">
+                  <span className="mb-1.5 block text-[11px] font-semibold text-muted-foreground">
                     Color Presets
                   </span>
                   <div className="grid grid-cols-4 gap-1.5">
@@ -1309,9 +1470,9 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                           })
                         }
                         className={cn(
-                          "h-6 rounded-md border text-[10px] font-medium transition hover:scale-105",
+                          "h-6.5 rounded-lg border text-[10px] font-semibold transition hover:scale-105 active:scale-95",
                           (selectedNodes[0].data as any).style?.fill === pal.fill &&
-                            "ring-2 ring-primary ring-offset-1 ring-offset-card",
+                            "ring-2 ring-primary ring-offset-1 ring-offset-card shadow-xs",
                         )}
                         style={{
                           backgroundColor: pal.fill,
@@ -1328,13 +1489,14 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
 
               {(selectedNodes[0].data as any).kind === "shape" ? (
                 <div>
-                  <span className="mb-1.5 block text-[11px] font-medium text-muted-foreground">
+                  <span className="mb-1.5 block text-[11px] font-semibold text-muted-foreground">
                     Shape Geometry
                   </span>
-                  <div className="flex items-center gap-1.5">
+                  <div className="grid grid-cols-5 gap-1">
                     {[
                       { kind: "rect", label: "Rect", icon: <Square className="size-3.5" /> },
                       { kind: "round-rect", label: "Round", icon: <Square className="size-3.5 rounded-sm" /> },
+                      { kind: "pill", label: "Pill", icon: <span className="inline-block h-2 w-3.5 rounded-full border border-current" /> },
                       { kind: "ellipse", label: "Circle", icon: <Circle className="size-3.5" /> },
                       { kind: "diamond", label: "Diamond", icon: <Diamond className="size-3.5" /> },
                     ].map((s) => (
@@ -1350,9 +1512,9 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                           })
                         }
                         className={cn(
-                          "flex flex-1 items-center justify-center gap-1 rounded-lg border border-border py-1 text-xs transition",
+                          "flex items-center justify-center rounded-xl border border-border py-1.5 text-xs transition hover:scale-105",
                           (selectedNodes[0].data as any).data?.kind === s.kind
-                            ? "bg-primary text-primary-foreground border-primary font-medium"
+                            ? "bg-primary text-primary-foreground border-primary font-semibold shadow-xs"
                             : "hover:bg-accent text-foreground",
                         )}
                         title={s.label}
@@ -1362,8 +1524,8 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                     ))}
                   </div>
 
-                  <span className="mb-1.5 mt-2.5 block text-[11px] font-medium text-muted-foreground">
-                    Palette
+                  <span className="mb-1.5 mt-2.5 block text-[11px] font-semibold text-muted-foreground">
+                    Pastel Palette
                   </span>
                   <div className="grid grid-cols-4 gap-1.5">
                     {SHAPE_PALETTES.map((pal) => (
@@ -1379,7 +1541,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                             },
                           })
                         }
-                        className="h-6 rounded-md border text-[10px] font-medium transition hover:scale-105"
+                        className="h-6.5 rounded-lg border text-[10px] font-semibold transition hover:scale-105 active:scale-95"
                         style={{
                           backgroundColor: pal.fill,
                           borderColor: pal.stroke,
@@ -1399,14 +1561,14 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                   <button
                     type="button"
                     onClick={() => globalFileInputRef.current?.click()}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-background py-1.5 text-xs font-medium text-foreground transition hover:bg-accent"
+                    className="flex w-full items-center justify-center gap-1.5 rounded-full border border-border bg-background py-1.5 text-xs font-semibold text-foreground transition hover:bg-accent active:scale-95"
                   >
                     <Upload className="size-3.5" />
                     Replace image from device
                   </button>
 
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Fit mode:</span>
+                    <span className="font-medium text-muted-foreground">Fit mode:</span>
                     <button
                       type="button"
                       onClick={() => {
@@ -1418,7 +1580,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                           },
                         })
                       }}
-                      className="flex items-center gap-1 rounded border border-border px-2 py-0.5 text-xs font-medium hover:bg-accent"
+                      className="flex items-center gap-1 rounded-full border border-border px-2.5 py-0.5 text-xs font-semibold hover:bg-accent transition"
                     >
                       {(selectedNodes[0].data as any).data?.fit === "cover" ? (
                         <>
@@ -1456,7 +1618,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
 
               {/* Font size */}
               <div className="flex items-center justify-between gap-2 text-xs">
-                <span className="text-muted-foreground">Font size</span>
+                <span className="font-medium text-muted-foreground">Font size</span>
                 <div className="flex items-center gap-1">
                   {[12, 14, 18, 24].map((fs) => (
                     <button
@@ -1464,9 +1626,9 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                       type="button"
                       onClick={() => updateSelected({ style: { fontSize: fs } })}
                       className={cn(
-                        "rounded px-1.5 py-0.5 text-[11px] font-medium transition",
+                        "rounded-full px-2 py-0.5 text-[11px] font-semibold transition",
                         (selectedNodes[0].data as any).style?.fontSize === fs
-                          ? "bg-primary text-primary-foreground font-semibold"
+                          ? "bg-primary text-primary-foreground font-bold shadow-xs"
                           : "hover:bg-accent text-foreground",
                       )}
                     >
@@ -1478,7 +1640,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
 
               {/* Rotation */}
               <div className="flex items-center justify-between gap-2 text-xs">
-                <span className="text-muted-foreground">Rotation</span>
+                <span className="font-medium text-muted-foreground">Rotation</span>
                 <div className="flex items-center gap-1.5">
                   <input
                     type="number"
@@ -1486,13 +1648,13 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                     onChange={(event) =>
                       updateSelected({ rotation: Number(event.target.value) })
                     }
-                    className="w-16 rounded border border-border bg-background px-2 py-0.5 text-right text-xs"
+                    className="w-16 rounded-lg border border-border bg-background px-2 py-0.5 text-right text-xs"
                   />
                   {(selectedNodes[0].data as any).rotation ? (
                     <button
                       type="button"
                       onClick={() => updateSelected({ rotation: 0 })}
-                      className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+                      className="rounded-full p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
                       title="Reset rotation"
                     >
                       <RotateCcw className="size-3" />
@@ -1507,7 +1669,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
         {/* Context menu */}
         {contextMenu ? (
           <div
-            className="fixed z-50 min-w-40 rounded-xl border border-border/80 bg-card p-1 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
+            className="fixed z-50 min-w-40 rounded-2xl border border-border/80 bg-card p-1 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 ring-1 ring-border/20"
             style={{ left: contextMenu.x, top: contextMenu.y }}
           >
             <button
@@ -1516,7 +1678,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                 duplicateNode(contextMenu.nodeId)
                 setContextMenu(null)
               }}
-              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition hover:bg-accent"
+              className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-xs font-medium transition hover:bg-accent"
             >
               <Copy className="size-3.5 text-muted-foreground" />
               Duplicate
@@ -1528,7 +1690,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                 deleteNode(contextMenu.nodeId)
                 setContextMenu(null)
               }}
-              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-destructive transition hover:bg-destructive/10"
+              className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-xs font-medium text-destructive transition hover:bg-destructive/10"
             >
               <Trash2 className="size-3.5" />
               Delete
@@ -1552,47 +1714,55 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
 
         {/* Welcoming Interactive Empty State */}
         {isEmpty ? (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <div className="pointer-events-auto max-w-md rounded-3xl border border-border/80 bg-card/90 p-8 text-center shadow-[0_20px_50px_-20px_rgba(0,0,0,0.3)] backdrop-blur-md">
-              <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-xs">
-                <Sparkles className="size-6" />
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
+            <div className="pointer-events-auto max-w-md rounded-3xl border border-border/80 bg-card/90 p-8 text-center shadow-2xl backdrop-blur-xl ring-1 ring-border/20 animate-in fade-in zoom-in-95 duration-200">
+              <div className="mx-auto flex size-13 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-xs">
+                <Sparkles className="size-6.5" />
               </div>
-              <h2 className="mt-4 font-display text-2xl tracking-tight">Your Canvas is Ready</h2>
-              <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+              <h2 className="mt-4 font-display text-2xl tracking-tight sm:text-3xl">Your Canvas is Ready</h2>
+              <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground sm:text-sm">
                 Drop images anywhere from your device, jot notes, map a plan, or sketch freely.
               </p>
 
-              <div className="mt-6 grid grid-cols-2 gap-2 text-left">
+              <div className="mt-6 grid grid-cols-2 gap-2.5 text-left">
                 <button
                   type="button"
                   onClick={() => addNode("note")}
-                  className="flex items-center gap-2 rounded-xl border border-border bg-background/80 p-2.5 text-xs font-medium text-foreground transition hover:border-primary/50 hover:bg-accent"
+                  className="flex items-center gap-2.5 rounded-2xl border border-border/80 bg-background/80 p-3 text-xs font-semibold text-foreground transition hover:border-primary/50 hover:bg-accent hover:scale-[1.02] active:scale-98 shadow-xs"
                 >
-                  <StickyNote className="size-4 text-amber-500" />
+                  <div className="flex size-7 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
+                    <StickyNote className="size-4" />
+                  </div>
                   <span>Add Note</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => globalFileInputRef.current?.click()}
-                  className="flex items-center gap-2 rounded-xl border border-border bg-background/80 p-2.5 text-xs font-medium text-foreground transition hover:border-primary/50 hover:bg-accent"
+                  className="flex items-center gap-2.5 rounded-2xl border border-border/80 bg-background/80 p-3 text-xs font-semibold text-foreground transition hover:border-primary/50 hover:bg-accent hover:scale-[1.02] active:scale-98 shadow-xs"
                 >
-                  <Upload className="size-4 text-indigo-500" />
+                  <div className="flex size-7 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-500">
+                    <Upload className="size-4" />
+                  </div>
                   <span>Upload Image</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setTool("pen")}
-                  className="flex items-center gap-2 rounded-xl border border-border bg-background/80 p-2.5 text-xs font-medium text-foreground transition hover:border-primary/50 hover:bg-accent"
+                  className="flex items-center gap-2.5 rounded-2xl border border-border/80 bg-background/80 p-3 text-xs font-semibold text-foreground transition hover:border-primary/50 hover:bg-accent hover:scale-[1.02] active:scale-98 shadow-xs"
                 >
-                  <Pencil className="size-4 text-emerald-500" />
+                  <div className="flex size-7 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
+                    <Pencil className="size-4" />
+                  </div>
                   <span>Start Drawing</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => addNode("task")}
-                  className="flex items-center gap-2 rounded-xl border border-border bg-background/80 p-2.5 text-xs font-medium text-foreground transition hover:border-primary/50 hover:bg-accent"
+                  className="flex items-center gap-2.5 rounded-2xl border border-border/80 bg-background/80 p-3 text-xs font-semibold text-foreground transition hover:border-primary/50 hover:bg-accent hover:scale-[1.02] active:scale-98 shadow-xs"
                 >
-                  <ListTodo className="size-4 text-sky-500" />
+                  <div className="flex size-7 items-center justify-center rounded-xl bg-sky-500/10 text-sky-500">
+                    <ListTodo className="size-4" />
+                  </div>
                   <span>Task Checklist</span>
                 </button>
               </div>
@@ -1623,11 +1793,11 @@ function ToolbarButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "flex size-8 items-center justify-center rounded-xl transition",
+        "flex size-9 items-center justify-center rounded-full transition-all duration-150",
         active
-          ? "bg-primary text-primary-foreground shadow-xs scale-105"
-          : "text-muted-foreground hover:bg-accent hover:text-foreground",
-        disabled && "opacity-35 pointer-events-none",
+          ? "bg-primary text-primary-foreground shadow-md scale-105 ring-2 ring-primary/25"
+          : "text-muted-foreground hover:bg-accent hover:text-foreground hover:scale-110 active:scale-95",
+        disabled && "opacity-30 pointer-events-none",
       )}
       title={title}
       aria-label={title}

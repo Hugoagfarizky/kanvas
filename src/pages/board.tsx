@@ -204,30 +204,34 @@ export function BoardPage() {
   return (
     <div className="flex min-h-svh flex-col">
       <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-border/70 bg-background/80 px-4 backdrop-blur-md sm:px-6">
-        <div className="flex min-w-0 items-center gap-1.5">
+        <div className="flex min-w-0 items-center gap-2">
           <Link
             to="/"
             aria-label="Back to boards"
-            className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}
+            className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "rounded-full hover:bg-card/90 hover:shadow-xs transition")}
           >
-            <ArrowLeft />
+            <ArrowLeft className="size-4" />
           </Link>
-          <span className="hidden h-6 w-px shrink-0 bg-border sm:block" />
+          <span className="hidden h-5 w-px shrink-0 bg-border/80 sm:block" />
 
           {loadState === "ready" && board ? (
-            <input
-              value={board.title}
-              onChange={(event) => handleTitleChange(event.target.value)}
-              onBlur={flushTitle}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === "Escape") {
-                  event.currentTarget.blur()
-                }
-              }}
-              aria-label="Board title"
-              spellCheck={false}
-              className="w-[min(52vw,26rem)] truncate rounded-md border border-transparent bg-transparent px-2 py-1 font-display text-xl leading-none outline-none transition hover:border-border/80 focus:border-border focus:bg-card focus:ring-[3px] focus:ring-ring/25 sm:text-2xl"
-            />
+            <div className="flex items-center gap-1.5 rounded-full border border-border/70 bg-card/70 px-3 py-1 shadow-xs backdrop-blur-xs transition focus-within:border-primary/50 focus-within:bg-card">
+              <span className="hidden text-xs font-semibold text-muted-foreground sm:inline">Kanvas</span>
+              <span className="hidden text-xs text-muted-foreground/50 sm:inline">/</span>
+              <input
+                value={board.title}
+                onChange={(event) => handleTitleChange(event.target.value)}
+                onBlur={flushTitle}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === "Escape") {
+                    event.currentTarget.blur()
+                  }
+                }}
+                aria-label="Board title"
+                spellCheck={false}
+                className="w-[min(48vw,22rem)] truncate bg-transparent font-sans text-sm font-semibold leading-none outline-none sm:text-base text-foreground"
+              />
+            </div>
           ) : (
             <span className="px-2 font-display text-xl text-muted-foreground sm:text-2xl">
               Board
@@ -246,18 +250,18 @@ export function BoardPage() {
                   : undefined
               }
               className={cn(
-                "hidden items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground sm:inline-flex",
+                "hidden items-center gap-1.5 rounded-full border border-border/80 bg-card/90 px-3 py-1 text-[11px] font-semibold text-muted-foreground shadow-xs sm:inline-flex",
                 saveState === "error" && "border-destructive/30 text-destructive",
               )}
             >
               <span
                 className={cn(
-                  "size-1.5 rounded-full",
+                  "size-2 rounded-full",
                   saveState === "saved"
-                    ? "bg-emerald-500"
+                    ? "bg-emerald-500 ring-2 ring-emerald-500/20"
                     : saveState === "saving"
-                      ? "animate-pulse bg-amber-500"
-                      : "bg-destructive",
+                      ? "animate-pulse bg-amber-500 ring-2 ring-amber-500/20"
+                      : "bg-destructive ring-2 ring-destructive/20",
                 )}
               />
               {saveLabel}
@@ -272,6 +276,7 @@ export function BoardPage() {
                 onClick={() => setShowShortcuts(true)}
                 aria-label="Keyboard shortcuts"
                 title="Keyboard shortcuts"
+                className="rounded-full hover:bg-card/90 hover:shadow-xs transition"
               >
                 <Keyboard className="size-4" />
               </Button>
@@ -281,8 +286,9 @@ export function BoardPage() {
                 onClick={handleExport}
                 aria-label="Export board as JSON"
                 title="Export board as JSON"
+                className="rounded-full hover:bg-card/90 hover:shadow-xs transition"
               >
-                <Download />
+                <Download className="size-4" />
               </Button>
               <Button
                 variant="ghost"
@@ -290,8 +296,9 @@ export function BoardPage() {
                 onClick={() => void handleExportPng()}
                 aria-label="Export board as PNG"
                 title="Export board as PNG"
+                className="rounded-full hover:bg-card/90 hover:shadow-xs transition"
               >
-                <ImageIcon />
+                <ImageIcon className="size-4" />
               </Button>
             </>
           ) : null}

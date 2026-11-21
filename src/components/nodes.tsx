@@ -5,8 +5,10 @@ import {
   ImageIcon,
   Maximize2,
   Minimize2,
+  Pin,
   Plus,
   RefreshCw,
+  Sparkles,
   Trash2,
   Upload,
   X,
@@ -69,25 +71,28 @@ function NodeFrame({
       <NodeResizer
         onResizeStart={() => pushHistory?.()}
         isVisible={selected}
-        minWidth={80}
-        minHeight={40}
-        lineClassName="!border-primary !border-2"
-        handleClassName="!size-2.5 !rounded-full !border !border-primary !bg-background !shadow-sm transition hover:!scale-125"
+        minWidth={90}
+        minHeight={50}
+        lineClassName="!border-primary/80 !border-2"
+        handleClassName="!size-3 !rounded-full !border-2 !border-background !bg-primary !shadow-md transition-transform hover:!scale-150"
       />
+      {/* Sleek circular connection handles matching modern canvas tools */}
       <Handle
         type="target"
         position={Position.Left}
-        className="!size-2.5 !rounded-full !border !border-border !bg-card transition hover:!scale-125 hover:!border-primary hover:!bg-primary"
+        className="!size-3 !rounded-full !border-2 !border-background !bg-primary/70 !shadow-sm transition-all hover:!scale-150 hover:!bg-primary"
       />
       <Handle
         type="source"
         position={Position.Right}
-        className="!size-2.5 !rounded-full !border !border-border !bg-card transition hover:!scale-125 hover:!border-primary hover:!bg-primary"
+        className="!size-3 !rounded-full !border-2 !border-background !bg-primary/70 !shadow-sm transition-all hover:!scale-150 hover:!bg-primary"
       />
       {children}
     </div>
   )
 }
+
+const NOTE_TAGS = ["Idea 💡", "Task 📋", "Note 📌", "Plan 🎯", "Urgent ⭐"]
 
 export function NoteNode({ id, data, selected }: NodeProps) {
   const d = data as KanvasNodeData
@@ -96,6 +101,12 @@ export function NoteNode({ id, data, selected }: NodeProps) {
 
   const isDarkCard = !isLightColor(d.style.fill)
   const textColor = d.style.text || (isDarkCard ? "#f8fafc" : "#1e293b")
+  const currentTag = d.data?.tag ?? "Note 📌"
+
+  function cycleTag() {
+    const nextIdx = (NOTE_TAGS.indexOf(currentTag) + 1) % NOTE_TAGS.length
+    update({ data: { ...d.data, tag: NOTE_TAGS[nextIdx] } })
+  }
 
   return (
     <NodeFrame
@@ -105,19 +116,35 @@ export function NoteNode({ id, data, selected }: NodeProps) {
         color: textColor,
         border: `1.5px solid ${d.style.stroke}`,
         fontSize: d.style.fontSize ?? 14,
-        borderRadius: 12,
+        borderRadius: 24,
         boxShadow:
           theme === "dark"
-            ? "0 10px 30px -10px rgba(0,0,0,0.7), 0 2px 6px -2px rgba(0,0,0,0.5)"
-            : "0 10px 25px -10px rgba(0,0,0,0.2), 0 2px 6px -2px rgba(0,0,0,0.08)",
+            ? "0 14px 34px -10px rgba(0,0,0,0.65), 0 3px 8px -2px rgba(0,0,0,0.4)"
+            : "0 14px 30px -10px rgba(0,0,0,0.12), 0 3px 8px -2px rgba(0,0,0,0.04)",
       }}
       rotation={d.rotation}
     >
+      {/* Chic bento header chip */}
+      <div className="flex items-center justify-between px-3.5 pt-2.5 pb-1">
+        <button
+          type="button"
+          onClick={cycleTag}
+          className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold tracking-wide transition hover:scale-105 active:scale-95"
+          style={{
+            backgroundColor: isDarkCard ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.06)",
+            color: textColor,
+          }}
+          title="Click to cycle tag"
+        >
+          {currentTag}
+        </button>
+      </div>
+
       <textarea
         value={d.data.text ?? ""}
         onChange={(event) => update({ data: { ...d.data, text: event.target.value } })}
-        className="h-full w-full resize-none bg-transparent p-3.5 font-sans leading-relaxed outline-none placeholder:opacity-50"
-        placeholder="Write a note..."
+        className="h-[calc(100%-2.2rem)] w-full resize-none bg-transparent px-3.5 pb-3 font-sans leading-relaxed outline-none placeholder:opacity-40"
+        placeholder="Jot down an idea..."
         spellCheck={false}
       />
     </NodeFrame>
@@ -129,7 +156,6 @@ export function TextNode({ id, data, selected }: NodeProps) {
   const update = useNodeUpdater(id)
   const { theme } = useTheme()
 
-  // Fix text contrast: if text color is default dark or unchanged, ensure it's visible in dark mode
   let effectiveTextColor = d.style.text
   if (!effectiveTextColor || effectiveTextColor === "#1f2937" || effectiveTextColor === "#000000") {
     effectiveTextColor = theme === "dark" ? "#f8fafc" : "#0f172a"
@@ -143,16 +169,16 @@ export function TextNode({ id, data, selected }: NodeProps) {
       style={{
         color: effectiveTextColor,
         fontSize: d.style.fontSize ?? 18,
-        fontWeight: 500,
-        borderRadius: 8,
+        fontWeight: 600,
+        borderRadius: 14,
       }}
-      className={selected ? "bg-accent/15" : undefined}
+      className={selected ? "bg-accent/20 ring-2 ring-primary/40" : undefined}
       rotation={d.rotation}
     >
       <textarea
         value={d.data.text ?? ""}
         onChange={(event) => update({ data: { ...d.data, text: event.target.value } })}
-        className="h-full w-full resize-none bg-transparent p-1.5 leading-snug outline-none placeholder:text-muted-foreground/50"
+        className="h-full w-full resize-none bg-transparent p-2 leading-snug outline-none placeholder:text-muted-foreground/45"
         placeholder="Type text..."
         spellCheck={false}
       />
@@ -169,7 +195,10 @@ export function TaskNode({ id, data, selected }: NodeProps) {
   const isDarkCard = !isLightColor(d.style.fill)
   const textColor = d.style.text || (isDarkCard ? "#f8fafc" : "#0f172a")
   const mutedColor = getOptimalMutedColor(d.style.fill, theme === "dark")
-  const borderColor = d.style.stroke || (isDarkCard ? "#334155" : "#cbd5e1")
+  const borderColor = d.style.stroke || (isDarkCard ? "#334155" : "#e2e8f0")
+
+  const total = taskData.items.length
+  const doneCount = taskData.items.filter((i: TaskItem) => i.done).length
 
   function updateItem(itemId: string, patch: Partial<TaskItem>) {
     update({
@@ -201,34 +230,70 @@ export function TaskNode({ id, data, selected }: NodeProps) {
         color: textColor,
         border: `1.5px solid ${borderColor}`,
         fontSize: d.style.fontSize ?? 13,
-        borderRadius: 12,
-        padding: 12,
+        borderRadius: 26,
+        padding: "14px 16px",
         boxShadow:
           theme === "dark"
-            ? "0 10px 25px -10px rgba(0,0,0,0.6)"
-            : "0 10px 25px -10px rgba(0,0,0,0.12)",
+            ? "0 16px 36px -10px rgba(0,0,0,0.65)"
+            : "0 16px 32px -10px rgba(0,0,0,0.12)",
       }}
       rotation={d.rotation}
     >
+      {/* Bento pill header with category badge & progress pill */}
+      <div className="mb-2.5 flex items-center justify-between">
+        <span
+          className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+          style={{
+            backgroundColor: isDarkCard ? "rgba(255,255,255,0.14)" : "rgba(0,0,0,0.06)",
+            color: textColor,
+          }}
+        >
+          <Pin className="size-2.5" />
+          Task List
+        </span>
+
+        {total > 0 ? (
+          <span
+            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+            style={{
+              backgroundColor:
+                doneCount === total && total > 0
+                  ? "rgba(16, 185, 129, 0.2)"
+                  : isDarkCard
+                    ? "rgba(255,255,255,0.1)"
+                    : "rgba(0,0,0,0.05)",
+              color: doneCount === total && total > 0 ? "#10b981" : mutedColor,
+            }}
+          >
+            {doneCount === total && total > 0 ? "✓ " : ""}
+            {doneCount}/{total} done
+          </span>
+        ) : null}
+      </div>
+
       <input
         value={taskData.title ?? ""}
         onChange={(event) => update({ data: { ...taskData, title: event.target.value } })}
-        placeholder="Task list"
-        className="mb-2.5 w-full bg-transparent font-semibold tracking-tight outline-none placeholder:opacity-50"
+        placeholder="Task list title"
+        className="mb-2.5 w-full bg-transparent font-bold tracking-tight outline-none placeholder:opacity-40"
         style={{ color: textColor }}
         spellCheck={false}
       />
-      <div className="space-y-1.5 overflow-y-auto max-h-[calc(100%-4rem)]">
+
+      <div className="space-y-1.5 overflow-y-auto max-h-[calc(100%-4.8rem)] pr-0.5">
         {taskData.items.map((item: TaskItem) => (
-          <div key={item.id} className="group/item flex items-center gap-2">
+          <div
+            key={item.id}
+            className="group/item flex items-center gap-2 rounded-xl p-1 transition hover:bg-black/5 dark:hover:bg-white/5"
+          >
             <button
               type="button"
               onClick={() => updateItem(item.id, { done: !item.done })}
               className={cn(
-                "flex size-4 shrink-0 items-center justify-center rounded border transition",
+                "flex size-4.5 shrink-0 items-center justify-center rounded-full border transition",
                 item.done
                   ? "bg-primary text-primary-foreground border-primary"
-                  : "border-border/80 hover:border-foreground/50",
+                  : "border-border/80 hover:border-primary/80",
               )}
               style={
                 item.done
@@ -250,7 +315,7 @@ export function TaskNode({ id, data, selected }: NodeProps) {
               }}
               placeholder="List item..."
               className={cn(
-                "min-w-0 flex-1 bg-transparent text-xs outline-none transition placeholder:opacity-50",
+                "min-w-0 flex-1 bg-transparent text-xs outline-none transition placeholder:opacity-40",
                 item.done && "line-through opacity-55",
               )}
               style={{ color: item.done ? mutedColor : textColor }}
@@ -268,14 +333,15 @@ export function TaskNode({ id, data, selected }: NodeProps) {
           </div>
         ))}
       </div>
+
       <button
         type="button"
         onClick={addItem}
-        className="mt-2.5 flex items-center gap-1 text-xs font-medium transition hover:opacity-100"
+        className="mt-2.5 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold transition hover:bg-black/5 dark:hover:bg-white/5"
         style={{ color: mutedColor }}
       >
-        <Plus className="size-3" />
-        Add item
+        <Plus className="size-3.5" />
+        Add task
       </button>
     </NodeFrame>
   )
@@ -284,6 +350,7 @@ export function TaskNode({ id, data, selected }: NodeProps) {
 export function ShapeNode({ id, data, selected }: NodeProps) {
   const d = data as KanvasNodeData
   const update = useNodeUpdater(id)
+  const { theme } = useTheme()
   const kind = d.data?.kind ?? "rect"
 
   const isDark = !isLightColor(d.style.fill)
@@ -295,6 +362,10 @@ export function ShapeNode({ id, data, selected }: NodeProps) {
       style={{
         color: textColor,
         fontSize: d.style.fontSize ?? 14,
+        boxShadow:
+          theme === "dark"
+            ? "0 12px 30px -10px rgba(0,0,0,0.6)"
+            : "0 12px 25px -10px rgba(0,0,0,0.1)",
       }}
       rotation={d.rotation}
     >
@@ -328,7 +399,18 @@ export function ShapeNode({ id, data, selected }: NodeProps) {
               y="1.5"
               width="97"
               height="97"
-              rx="18"
+              rx="24"
+              fill={d.style.fill}
+              stroke={d.style.stroke}
+              strokeWidth="2"
+            />
+          ) : kind === "pill" ? (
+            <rect
+              x="1.5"
+              y="1.5"
+              width="97"
+              height="97"
+              rx="48"
               fill={d.style.fill}
               stroke={d.style.stroke}
               strokeWidth="2"
@@ -339,7 +421,7 @@ export function ShapeNode({ id, data, selected }: NodeProps) {
               y="1.5"
               width="97"
               height="97"
-              rx="8"
+              rx="16"
               fill={d.style.fill}
               stroke={d.style.stroke}
               strokeWidth="2"
@@ -349,8 +431,8 @@ export function ShapeNode({ id, data, selected }: NodeProps) {
         <textarea
           value={d.data?.text ?? ""}
           onChange={(event) => update({ data: { ...d.data, text: event.target.value } })}
-          className="relative z-10 max-h-full w-4/5 resize-none bg-transparent p-2 text-center font-medium leading-snug outline-none placeholder:opacity-50"
-          placeholder="Label"
+          className="relative z-10 max-h-full w-4/5 resize-none bg-transparent p-2 text-center font-semibold leading-snug outline-none placeholder:opacity-40"
+          placeholder="Shape label"
           style={{ color: textColor }}
           spellCheck={false}
         />
@@ -364,7 +446,6 @@ export function FrameNode({ id, data, selected }: NodeProps) {
   const update = useNodeUpdater(id)
   const { theme } = useTheme()
 
-  // Frame title text contrast
   const titleColor =
     d.style.text && d.style.text !== "#475569"
       ? d.style.text
@@ -380,19 +461,23 @@ export function FrameNode({ id, data, selected }: NodeProps) {
         background: d.style.fill,
         color: titleColor,
         fontSize: d.style.fontSize ?? 12,
-        borderRadius: 14,
+        borderRadius: 28,
       }}
       rotation={d.rotation}
     >
-      <div className="flex h-full w-full flex-col p-3.5">
-        <input
-          value={d.data?.title ?? ""}
-          onChange={(event) => update({ data: { ...d.data, title: event.target.value } })}
-          placeholder="Frame"
-          className="mb-2 bg-transparent font-semibold uppercase tracking-[0.14em] outline-none placeholder:opacity-50"
-          style={{ color: titleColor }}
-          spellCheck={false}
-        />
+      <div className="flex h-full w-full flex-col p-4">
+        {/* Scooped / pill frame header tab */}
+        <div className="inline-flex self-start items-center gap-2 rounded-full border border-border/80 bg-card/85 px-3 py-1 shadow-xs backdrop-blur-xs">
+          <Sparkles className="size-3 text-primary" />
+          <input
+            value={d.data?.title ?? ""}
+            onChange={(event) => update({ data: { ...d.data, title: event.target.value } })}
+            placeholder="FRAME ZONE"
+            className="bg-transparent font-bold uppercase tracking-[0.14em] outline-none placeholder:opacity-40 text-xs"
+            style={{ color: titleColor }}
+            spellCheck={false}
+          />
+        </div>
         <div className="flex-1" />
       </div>
     </NodeFrame>
@@ -413,13 +498,12 @@ export function ImageNode({ id, data, selected }: NodeProps) {
       const src = e.target?.result as string
       if (!src) return
 
-      // Measure dimensions
       const img = new Image()
       img.onload = () => {
         const maxWidth = 380
         const scale = Math.min(1, maxWidth / img.naturalWidth)
-        const width = Math.max(120, Math.round(img.naturalWidth * scale))
-        const height = Math.max(80, Math.round(img.naturalHeight * scale))
+        const width = Math.max(140, Math.round(img.naturalWidth * scale))
+        const height = Math.max(100, Math.round(img.naturalHeight * scale))
 
         update({
           size: { width, height },
@@ -444,7 +528,7 @@ export function ImageNode({ id, data, selected }: NodeProps) {
       selected={selected}
       style={{
         border: `1.5px solid ${d.style.stroke || "var(--border)"}`,
-        borderRadius: 12,
+        borderRadius: 24,
         overflow: "hidden",
         background: d.style.fill || "var(--card)",
       }}
@@ -483,12 +567,12 @@ export function ImageNode({ id, data, selected }: NodeProps) {
             draggable={false}
           />
 
-          {/* Quick action overlay on hover */}
-          <div className="absolute right-2 top-2 z-20 flex items-center gap-1 rounded-lg border border-border/70 bg-card/90 p-1 opacity-0 shadow-sm backdrop-blur transition group-hover/img:opacity-100 group-hover/frame:opacity-100">
+          {/* Quick action floating pill overlay */}
+          <div className="absolute right-2.5 top-2.5 z-20 flex items-center gap-1 rounded-full border border-border/80 bg-card/90 p-1 opacity-0 shadow-md backdrop-blur-md transition group-hover/img:opacity-100 group-hover/frame:opacity-100">
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
+              className="flex size-6.5 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
               title="Replace image from device"
             >
               <RefreshCw className="size-3.5" />
@@ -500,7 +584,7 @@ export function ImageNode({ id, data, selected }: NodeProps) {
                   data: { ...d.data, fit: fitMode === "contain" ? "cover" : "contain" },
                 })
               }
-              className="flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
+              className="flex size-6.5 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
               title={fitMode === "contain" ? "Switch to cover" : "Switch to contain"}
             >
               {fitMode === "contain" ? (
@@ -512,7 +596,7 @@ export function ImageNode({ id, data, selected }: NodeProps) {
             <button
               type="button"
               onClick={() => update({ data: { ...d.data, src: "" } })}
-              className="flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-destructive/15 hover:text-destructive"
+              className="flex size-6.5 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive/15 hover:text-destructive"
               title="Remove image"
             >
               <X className="size-3.5" />
@@ -521,7 +605,9 @@ export function ImageNode({ id, data, selected }: NodeProps) {
 
           {isDragOver ? (
             <div className="absolute inset-0 z-30 flex items-center justify-center bg-primary/20 backdrop-blur-xs">
-              <p className="text-xs font-semibold text-primary">Drop to replace image</p>
+              <p className="rounded-full bg-card/90 px-3 py-1 text-xs font-semibold text-primary shadow-sm">
+                Drop to replace image
+              </p>
             </div>
           ) : null}
         </div>
@@ -535,37 +621,37 @@ export function ImageNode({ id, data, selected }: NodeProps) {
           onDragLeave={() => setIsDragOver(false)}
           onDrop={handleDrop}
           className={cn(
-            "flex h-full w-full flex-col items-center justify-center gap-2.5 p-4 text-center transition",
+            "flex h-full w-full flex-col items-center justify-center gap-2.5 p-5 text-center transition",
             isDragOver ? "bg-primary/10 border-2 border-dashed border-primary" : "bg-card",
           )}
         >
-          <div className="flex size-10 items-center justify-center rounded-xl bg-accent text-accent-foreground shadow-xs">
-            <ImageIcon className="size-5" />
+          <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-xs">
+            <ImageIcon className="size-5.5" />
           </div>
 
           <div className="space-y-0.5">
-            <p className="text-xs font-medium text-foreground">Add an image</p>
-            <p className="text-[11px] text-muted-foreground">Drop here or upload from device</p>
+            <p className="text-xs font-semibold text-foreground">Add an image</p>
+            <p className="text-[11px] text-muted-foreground">Drop file here or choose from device</p>
           </div>
 
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-xs transition hover:bg-accent"
+            className="flex items-center gap-1.5 rounded-full border border-border bg-background px-3.5 py-1.5 text-xs font-semibold text-foreground shadow-xs transition hover:scale-105 active:scale-95"
           >
             <Upload className="size-3.5" />
             Choose file
           </button>
 
           <div className="flex w-full items-center gap-2 pt-1 text-[10px] text-muted-foreground">
-            <span className="h-px flex-1 bg-border" />
+            <span className="h-px flex-1 bg-border/80" />
             <span>or URL</span>
-            <span className="h-px flex-1 bg-border" />
+            <span className="h-px flex-1 bg-border/80" />
           </div>
 
           <input
-            placeholder="Paste image URL and press Enter"
-            className="w-full rounded-md border border-border bg-background px-2.5 py-1 text-[11px] outline-none transition focus:border-primary focus:ring-1 focus:ring-primary"
+            placeholder="Paste image URL + Enter"
+            className="w-full rounded-full border border-border bg-background px-3 py-1 text-center text-[11px] outline-none transition focus:border-primary focus:ring-1 focus:ring-primary"
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 const target = event.target as HTMLInputElement
