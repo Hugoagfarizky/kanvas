@@ -699,6 +699,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
     kind: NodeType,
     presetData?: Record<string, any>,
     presetStyle?: Partial<NodeStyle>,
+    presetSize?: Size,
   ) {
     pushHistory()
     const center = reactFlow.screenToFlowPosition({
@@ -707,11 +708,11 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
     })
 
     const id = createId("node")
-    const size = DEFAULT_SIZES[kind]
+    const size = presetSize ?? DEFAULT_SIZES[kind]
     const defaultStyles = getDefaultStyles(theme)
     const offset = nodes.length > 0 ? (nodes.length % 6) * 36 : 0
     const finalData = presetData
-      ? { ...defaultNodeData(kind), ...presetData }
+      ? { ...defaultNodeData(kind), ...presetData, userColor: Boolean(presetStyle?.fill) }
       : defaultNodeData(kind)
     const finalStyle = presetStyle
       ? { ...defaultStyles[kind], ...presetStyle }
@@ -1452,6 +1453,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                     badgeIcon: "+",
                   },
                   { fill: "#ffffff", stroke: "#e2e8f0", text: "#0f172a" },
+                  { width: 290, height: 165 },
                 )
               }
               className="flex size-9 items-center justify-center rounded-full bg-[#7dd3fc] font-bold text-sm text-[#0c4a6e] shadow-md transition hover:scale-110 active:scale-95"
@@ -1474,6 +1476,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                     avatars: ["ET", "AS", "MR"],
                   },
                   { fill: "#f3e8ff", stroke: "#d8b4fe", text: "#581c87" },
+                  { width: 325, height: 195 },
                 )
               }
               className="flex size-9 items-center justify-center rounded-full bg-[#f472b6] font-bold text-sm text-[#831843] shadow-md transition hover:scale-110 active:scale-95"
@@ -1495,6 +1498,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                     text: "Interactive discussion on clinical diagnoses, guidelines, and patient safety.",
                   },
                   { fill: "#e0f2fe", stroke: "#7dd3fc", text: "#0369a1" },
+                  { width: 260, height: 155 },
                 )
               }
               className="flex size-9 items-center justify-center rounded-full bg-[#fcd34d] font-bold text-sm text-[#78350f] shadow-md transition hover:scale-110 active:scale-95"

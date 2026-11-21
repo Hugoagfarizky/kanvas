@@ -11,7 +11,7 @@ import {
 } from "lucide-react"
 
 import { createId } from "@/lib/id"
-import type { KanvasNode, NodeStyle, TemplateId } from "@/types/board"
+import type { KanvasEdge, KanvasNode, NodeStyle, TemplateId } from "@/types/board"
 
 export type BoardTemplate = {
   id: Exclude<TemplateId, "blank">
@@ -612,6 +612,7 @@ export function seedNodesForTemplate(templateId: TemplateId): KanvasNode[] {
 
   switch (templateId) {
     case "blank":
+      return []
     case "dei":
       return seedDeiLearningPlan().nodes
     case "cardiology":
@@ -710,5 +711,20 @@ export function seedNodesForTemplate(templateId: TemplateId): KanvasNode[] {
       ]
     default:
       return seedDeiLearningPlan().nodes
+  }
+}
+
+export function seedEdgesForTemplate(templateId: TemplateId): KanvasEdge[] {
+  switch (templateId) {
+    case "blank":
+      return []
+    case "dei":
+      return seedDeiLearningPlan().edges
+    case "cardiology":
+      return seedCardiologyDynamics().edges
+    case "uxflow":
+      return seedUXFlowArchitecture().edges
+    default:
+      return []
   }
 }

@@ -71,12 +71,14 @@ function useNodeUpdater(id: string) {
 }
 
 function NodeFrame({
+  id,
   selected,
   children,
   className,
   style,
   rotation,
 }: {
+  id?: string
   selected?: boolean
   children: React.ReactNode
   className?: string
@@ -84,9 +86,17 @@ function NodeFrame({
   rotation?: number
 }) {
   const pushHistory = useHistoryPush()
+  const { setNodes } = useReactFlow()
 
   return (
     <div
+      onPointerDownCapture={() => {
+        if (!selected && id) {
+          setNodes((nodes) =>
+            nodes.map((n) => ({ ...n, selected: n.id === id })),
+          )
+        }
+      }}
       className={cn("group/frame relative h-full w-full", className)}
       style={{
         ...style,
@@ -118,6 +128,70 @@ function NodeFrame({
   )
 }
 
+function FloatingNodeToolbar({
+  selected,
+  currentFill,
+  onSelectColor,
+  onDelete,
+}: {
+  selected?: boolean
+  currentFill?: string
+  onSelectColor: (pal: (typeof NOTE_PALETTES)[number]) => void
+  onDelete?: () => void
+}) {
+  if (!selected) return null
+  return (
+    <div
+      onPointerDown={(e) => e.stopPropagation()}
+      className="absolute -top-12 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 rounded-full border border-border/80 bg-card/95 px-3 py-1 shadow-2xl backdrop-blur-xl ring-1 ring-border/20 animate-in fade-in zoom-in-95 duration-100 select-none pointer-events-auto"
+    >
+      <Palette className="size-3.5 text-muted-foreground mr-0.5" />
+      <div className="flex items-center gap-1">
+        {NOTE_PALETTES.map((pal) => {
+          const isActive = (currentFill ?? "").toLowerCase() === pal.fill.toLowerCase()
+          return (
+            <button
+              key={pal.name}
+              type="button"
+              title={`Color: ${pal.name}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                onSelectColor(pal)
+              }}
+              className={cn(
+                "size-5 rounded-full border transition hover:scale-130 active:scale-90 shadow-2xs",
+                isActive
+                  ? "ring-2 ring-primary ring-offset-1 ring-offset-card scale-115"
+                  : "hover:ring-1 hover:ring-primary/50",
+              )}
+              style={{
+                backgroundColor: pal.fill,
+                borderColor: pal.stroke,
+              }}
+            />
+          )
+        })}
+      </div>
+      {onDelete ? (
+        <>
+          <span className="mx-0.5 h-3.5 w-px bg-border/80" />
+          <button
+            type="button"
+            title="Delete card"
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete()
+            }}
+            className="rounded-full p-1 text-muted-foreground transition hover:bg-destructive/15 hover:text-destructive active:scale-90"
+          >
+            <Trash2 className="size-3" />
+          </button>
+        </>
+      ) : null}
+    </div>
+  )
+}
+
 const NOTE_TAGS = ["Idea", "Task", "Note", "Plan", "Urgent"]
 const BADGE_ICONS = ["+", "01", "02", "03", "04"]
 
@@ -125,6 +199,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
   const d = data as KanvasNodeData
   const { update, remove } = useNodeActions(id)
   const { theme } = useTheme()
+  const [showPalettePopover, setShowPalettePopover] = useState(false)
 
   const isUserColor = Boolean(d.data?.userColor)
   const hasCustomFill = Boolean(
@@ -132,20 +207,20 @@ export function NoteNode({ id, data, selected }: NodeProps) {
   )
 
   // Dynamic effective fill, stroke, and text color
-  const effectiveFill = isUserColor
-    ? (d.style?.fill || (theme === "dark" ? "#1a1e29" : "#ffffff"))
+  const effectiveFill = isUserColor && d.style?.fill
+    ? d.style.fill
     : hasCustomFill
       ? d.style.fill
       : theme === "dark"
         ? "#1a1e29"
         : (d.style?.fill || "#ffffff")
 
-  const effectiveStroke = isUserColor
-    ? (d.style?.stroke || (theme === "dark" ? "rgba(255,255,255,0.12)" : "#e2e8f0"))
+  const effectiveStroke = isUserColor && d.style?.stroke
+    ? d.style.stroke
     : (d.style?.stroke && d.style.stroke !== "#e2e8f0")
       ? d.style.stroke
       : theme === "dark"
-        ? "rgba(255,255,255,0.12)"
+        ? "rgba(255,255,255,0.14)"
         : (d.style?.stroke || "#e2e8f0")
 
   const isDarkCard = !isLightColor(effectiveFill)
@@ -154,22 +229,15 @@ export function NoteNode({ id, data, selected }: NodeProps) {
       ? d.style.text
       : getOptimalTextColor(effectiveFill, theme === "dark")
   const effectiveMutedText = getOptimalMutedColor(effectiveFill, theme === "dark")
-  const textColor = effectiveText
   const currentTag = d.data?.tag ?? "Note"
 
-  function cyclePalette() {
-    const curFill = (d.style?.fill ?? "").toLowerCase()
-    const currentIdx = NOTE_PALETTES.findIndex(
-      (p) => p.fill.toLowerCase() === curFill,
-    )
-    const nextIdx = (currentIdx + 1) % NOTE_PALETTES.length
-    const nextPal = NOTE_PALETTES[nextIdx]
+  function applyPalette(pal: (typeof NOTE_PALETTES)[number]) {
     update({
       style: {
         ...d.style,
-        fill: nextPal.fill,
-        stroke: nextPal.stroke,
-        text: nextPal.text,
+        fill: pal.fill,
+        stroke: pal.stroke,
+        text: pal.text,
       },
       data: {
         ...d.data,
@@ -177,6 +245,24 @@ export function NoteNode({ id, data, selected }: NodeProps) {
       },
     })
   }
+
+  function cyclePalette() {
+    const curFill = (effectiveFill ?? "").toLowerCase()
+    const currentIdx = NOTE_PALETTES.findIndex(
+      (p) => p.fill.toLowerCase() === curFill,
+    )
+    const nextIdx = (currentIdx + 1) % NOTE_PALETTES.length
+    applyPalette(NOTE_PALETTES[nextIdx])
+  }
+
+  const toolbar = (
+    <FloatingNodeToolbar
+      selected={selected}
+      currentFill={effectiveFill}
+      onSelectColor={applyPalette}
+      onDelete={remove}
+    />
+  )
 
   function cycleTag() {
     const nextIdx = (NOTE_TAGS.indexOf(currentTag) + 1) % NOTE_TAGS.length
@@ -198,6 +284,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
   if (d.data?.isClinical) {
     return (
       <NodeFrame
+        id={id}
         selected={selected}
         style={{
           background: isUserColor ? effectiveFill : (theme === "dark" ? "#161922" : "#ffffff"),
@@ -212,6 +299,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
               : "0 18px 36px -10px rgba(0,0,0,0.08)",
         }}
       >
+        {toolbar}
         <div className="flex h-full w-full flex-col justify-between p-4.5">
           <div className="flex items-center justify-between gap-4">
             {/* Patient Photo & Info */}
@@ -302,6 +390,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
     const isUp = d.data.chartDelta?.startsWith("+")
     return (
       <NodeFrame
+        id={id}
         selected={selected}
         style={{
           background: isUserColor ? effectiveFill : (theme === "dark" ? "#1a1e29" : "#ffffff"),
@@ -316,6 +405,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
               : "0 14px 30px -10px rgba(0,0,0,0.06)",
         }}
       >
+        {toolbar}
         <div className="flex h-full w-full flex-col justify-between p-3.5">
           <div className="flex items-center justify-between">
             <div>
@@ -367,6 +457,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
   if (d.data?.chartType === "ecg") {
     return (
       <NodeFrame
+        id={id}
         selected={selected}
         style={{
           background: isUserColor ? effectiveFill : (theme === "dark" ? "#1a1e29" : "#ffffff"),
@@ -381,6 +472,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
               : "0 14px 30px -10px rgba(0,0,0,0.06)",
         }}
       >
+        {toolbar}
         <div className="flex h-full w-full flex-col justify-between p-3.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
@@ -422,6 +514,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
     const fields = d.data.formFields ?? []
     return (
       <NodeFrame
+        id={id}
         selected={selected}
         style={{
           background: isUserColor ? effectiveFill : (theme === "dark" ? "#1a1e29" : "#ffffff"),
@@ -436,6 +529,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
               : "0 14px 30px -10px rgba(0,0,0,0.06)",
         }}
       >
+        {toolbar}
         <div className="flex h-full w-full flex-col justify-between p-4">
           <div>
             <div className="flex items-center justify-between">
@@ -509,6 +603,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
   if (d.data?.isMedication) {
     return (
       <NodeFrame
+        id={id}
         selected={selected}
         style={{
           background: theme === "dark" ? "#1e293b" : "#334155",
@@ -543,6 +638,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
   if (d.data?.isSymptoms) {
     return (
       <NodeFrame
+        id={id}
         selected={selected}
         style={{
           background: isUserColor ? effectiveFill : (theme === "dark" ? "#1a1e29" : "#ffffff"),
@@ -557,6 +653,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
               : "0 14px 30px -10px rgba(0,0,0,0.06)",
         }}
       >
+        {toolbar}
         <div className="flex h-full w-full flex-col justify-between p-3.5">
           <div className="flex items-center justify-between">
             <h5 className="font-sans text-xs font-bold text-foreground">Symptoms</h5>
@@ -591,6 +688,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
   if (d.data?.isScrubber) {
     return (
       <NodeFrame
+        id={id}
         selected={selected}
         style={{
           background: theme === "dark" ? "#161922" : "#ffffff",
@@ -627,6 +725,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
   if (d.data?.tag === "Flow Start" || d.data?.title === "Sign up example") {
     return (
       <NodeFrame
+        id={id}
         selected={selected}
         style={{
           background: "#eff6ff",
@@ -662,6 +761,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
 
     return (
       <NodeFrame
+        id={id}
         selected={selected}
         style={{
           background: mediaBg,
@@ -675,6 +775,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
         }}
         rotation={d.rotation ?? -4}
       >
+        {toolbar}
         <div className="flex h-full w-full flex-col justify-between p-4.5">
           {/* Header Row: Title & Music Icon */}
           <div className="flex items-start justify-between gap-3">
@@ -700,15 +801,43 @@ export function NoteNode({ id, data, selected }: NodeProps) {
 
             {/* Circular Play / Wave Button & Color Palette */}
             <div className="relative shrink-0 flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={cyclePalette}
-                className="rounded-full p-1.5 transition hover:bg-black/10 hover:scale-110 active:scale-95"
-                style={{ color: mediaText }}
-                title="Change card color"
-              >
-                <Palette className="size-4" />
-              </button>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowPalettePopover((v) => !v)}
+                  onDoubleClick={cyclePalette}
+                  className="rounded-full p-1.5 transition hover:bg-black/10 hover:scale-110 active:scale-95"
+                  style={{ color: mediaText }}
+                  title="Change card color"
+                >
+                  <Palette className="size-4" />
+                </button>
+                {showPalettePopover ? (
+                  <div
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className="absolute bottom-8 right-0 z-50 flex items-center gap-1 rounded-full border border-border/80 bg-card/95 p-1.5 shadow-2xl backdrop-blur-xl ring-1 ring-border/20 animate-in fade-in zoom-in-95 select-none"
+                  >
+                    {NOTE_PALETTES.map((pal) => (
+                      <button
+                        key={pal.name}
+                        type="button"
+                        title={pal.name}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          applyPalette(pal)
+                          setShowPalettePopover(false)
+                        }}
+                        className={cn(
+                          "size-4 rounded-full border transition hover:scale-125 active:scale-90",
+                          effectiveFill.toLowerCase() === pal.fill.toLowerCase() &&
+                            "ring-1 ring-primary ring-offset-1",
+                        )}
+                        style={{ backgroundColor: pal.fill, borderColor: pal.stroke }}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+              </div>
               <div className="relative shrink-0">
                 {isPlaying ? (
                   <span className="absolute -inset-1.5 animate-ping rounded-full border-2 border-purple-400 opacity-60" />
@@ -759,6 +888,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
     const isCompleted = d.data?.status === "Completed"
     return (
       <NodeFrame
+        id={id}
         selected={selected}
         style={{
           background: effectiveFill,
@@ -772,6 +902,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
         }}
         rotation={d.rotation}
       >
+        {toolbar}
         <div className="flex h-full w-full flex-col justify-between p-4.5">
           {/* Top Row: Title & Circular Badge */}
           <div className="flex items-start justify-between gap-3">
@@ -824,15 +955,46 @@ export function NoteNode({ id, data, selected }: NodeProps) {
             </button>
 
             {/* Actions: Palette (change color), ... (cycle tag), X (delete), ✓ (toggle done) */}
-            <div className="flex items-center gap-1 text-muted-foreground">
+            <div className="relative flex items-center gap-1 text-muted-foreground">
               <button
                 type="button"
-                onClick={cyclePalette}
-                className="rounded-full p-1 transition hover:bg-accent hover:text-foreground active:scale-95"
-                title="Change card color (cycle palette)"
+                onClick={() => setShowPalettePopover((v) => !v)}
+                onDoubleClick={cyclePalette}
+                className={cn(
+                  "rounded-full p-1 transition hover:bg-accent hover:text-foreground active:scale-95",
+                  showPalettePopover && "bg-accent text-foreground",
+                )}
+                title="Change card color"
               >
                 <Palette className="size-3.5" />
               </button>
+
+              {showPalettePopover ? (
+                <div
+                  onPointerDown={(e) => e.stopPropagation()}
+                  className="absolute bottom-8 right-0 z-50 flex items-center gap-1 rounded-full border border-border/80 bg-card/95 p-1.5 shadow-2xl backdrop-blur-xl ring-1 ring-border/20 animate-in fade-in zoom-in-95 select-none"
+                >
+                  {NOTE_PALETTES.map((pal) => (
+                    <button
+                      key={pal.name}
+                      type="button"
+                      title={pal.name}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        applyPalette(pal)
+                        setShowPalettePopover(false)
+                      }}
+                      className={cn(
+                        "size-4.5 rounded-full border transition hover:scale-125 active:scale-90",
+                        effectiveFill.toLowerCase() === pal.fill.toLowerCase() &&
+                          "ring-1 ring-primary ring-offset-1",
+                      )}
+                      style={{ backgroundColor: pal.fill, borderColor: pal.stroke }}
+                    />
+                  ))}
+                </div>
+              ) : null}
+
               <button
                 type="button"
                 onClick={cycleTag}
@@ -877,11 +1039,12 @@ export function NoteNode({ id, data, selected }: NodeProps) {
 
     return (
       <NodeFrame
+        id={id}
         selected={selected}
         style={{
-          background: d.style.fill,
-          color: textColor,
-          border: `1.5px solid ${d.style.stroke}`,
+          background: effectiveFill,
+          color: effectiveText,
+          border: `1.5px solid ${effectiveStroke}`,
           borderRadius: 26,
           boxShadow:
             theme === "dark"
@@ -890,6 +1053,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
         }}
         rotation={d.rotation}
       >
+        {toolbar}
         <div className="flex h-full w-full flex-col justify-between p-4">
           {/* Top Row: Category chip & Date chip */}
           <div className="flex items-center justify-between">
@@ -904,9 +1068,19 @@ export function NoteNode({ id, data, selected }: NodeProps) {
               <span>{cat}</span>
             </div>
 
-            <span className="rounded-full bg-black/5 px-2.5 py-0.5 text-[11px] font-semibold opacity-85 dark:bg-white/10">
-              {d.data?.date ?? "Tu, 25.03"}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="rounded-full bg-black/5 px-2.5 py-0.5 text-[11px] font-semibold opacity-85 dark:bg-white/10">
+                {d.data?.date ?? "Tu, 25.03"}
+              </span>
+              <button
+                type="button"
+                onClick={remove}
+                className="rounded-full p-1 text-muted-foreground transition hover:bg-destructive/15 hover:text-destructive"
+                title="Delete event"
+              >
+                <X className="size-3" />
+              </button>
+            </div>
           </div>
 
           {/* Description Text */}
@@ -915,29 +1089,58 @@ export function NoteNode({ id, data, selected }: NodeProps) {
             onChange={(e) => update({ data: { ...d.data, text: e.target.value } })}
             placeholder="Event details..."
             className="my-2 h-[calc(100%-4rem)] w-full resize-none bg-transparent text-xs leading-relaxed outline-none placeholder:opacity-40"
-            style={{ color: textColor }}
+            style={{ color: effectiveText }}
             spellCheck={false}
           />
 
-          {/* Bottom Row: Optional Time Pill */}
-          {d.data?.time ? (
-            <div className="inline-flex self-start items-center gap-1.5 rounded-full bg-white/70 px-2.5 py-0.5 text-[10px] font-bold shadow-2xs backdrop-blur-xs dark:bg-black/30">
-              <Clock className="size-3 opacity-75" />
-              <span>{d.data.time}</span>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between text-[10px] opacity-60">
-              <span>{currentTag}</span>
+          {/* Bottom Row: Optional Time Pill & Actions */}
+          <div className="flex items-center justify-between">
+            {d.data?.time ? (
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-2.5 py-0.5 text-[10px] font-bold shadow-2xs backdrop-blur-xs dark:bg-black/30">
+                <Clock className="size-3 opacity-75" />
+                <span>{d.data.time}</span>
+              </div>
+            ) : (
+              <span className="text-[10px] opacity-60">{currentTag}</span>
+            )}
+
+            <div className="relative">
               <button
                 type="button"
-                onClick={remove}
-                className="hover:text-destructive transition"
-                title="Delete event"
+                onClick={() => setShowPalettePopover((v) => !v)}
+                onDoubleClick={cyclePalette}
+                className="rounded-full p-1 text-muted-foreground transition hover:bg-accent hover:text-foreground"
+                title="Change card color"
               >
-                <X className="size-3" />
+                <Palette className="size-3.5" />
               </button>
+              {showPalettePopover ? (
+                <div
+                  onPointerDown={(e) => e.stopPropagation()}
+                  className="absolute bottom-7 right-0 z-50 flex items-center gap-1 rounded-full border border-border/80 bg-card/95 p-1.5 shadow-2xl backdrop-blur-xl ring-1 ring-border/20 animate-in fade-in zoom-in-95 select-none"
+                >
+                  {NOTE_PALETTES.map((pal) => (
+                    <button
+                      key={pal.name}
+                      type="button"
+                      title={pal.name}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        applyPalette(pal)
+                        setShowPalettePopover(false)
+                      }}
+                      className={cn(
+                        "size-4 rounded-full border transition hover:scale-125 active:scale-90",
+                        effectiveFill.toLowerCase() === pal.fill.toLowerCase() &&
+                          "ring-1 ring-primary ring-offset-1",
+                      )}
+                      style={{ backgroundColor: pal.fill, borderColor: pal.stroke }}
+                    />
+                  ))}
+                </div>
+              ) : null}
             </div>
-          )}
+          </div>
         </div>
       </NodeFrame>
     )
@@ -946,11 +1149,12 @@ export function NoteNode({ id, data, selected }: NodeProps) {
   // --- 4. STANDARD NOTE (Fallback for simple sticky notes) ---
   return (
     <NodeFrame
+      id={id}
       selected={selected}
       style={{
-        background: d.style.fill,
-        color: textColor,
-        border: `1.5px solid ${d.style.stroke}`,
+        background: effectiveFill,
+        color: effectiveText,
+        border: `1.5px solid ${effectiveStroke}`,
         fontSize: d.style.fontSize ?? 14,
         borderRadius: 24,
         boxShadow:
@@ -960,6 +1164,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
       }}
       rotation={d.rotation}
     >
+      {toolbar}
       <div className="flex items-center justify-between px-3.5 pt-2.5 pb-1">
         <button
           type="button"
@@ -967,21 +1172,60 @@ export function NoteNode({ id, data, selected }: NodeProps) {
           className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold tracking-wide transition hover:scale-105 active:scale-95"
           style={{
             backgroundColor: isDarkCard ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.06)",
-            color: textColor,
+            color: effectiveText,
           }}
           title="Click to cycle tag"
         >
           {currentTag}
         </button>
 
-        <button
-          type="button"
-          onClick={remove}
-          className="rounded-full p-1 opacity-60 transition hover:opacity-100 hover:text-destructive"
-          title="Delete note"
-        >
-          <X className="size-3" />
-        </button>
+        <div className="flex items-center gap-1">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowPalettePopover((v) => !v)}
+              onDoubleClick={cyclePalette}
+              className="rounded-full p-1 opacity-60 transition hover:opacity-100 hover:text-foreground"
+              title="Change note color"
+            >
+              <Palette className="size-3" />
+            </button>
+            {showPalettePopover ? (
+              <div
+                onPointerDown={(e) => e.stopPropagation()}
+                className="absolute top-6 right-0 z-50 flex items-center gap-1 rounded-full border border-border/80 bg-card/95 p-1.5 shadow-2xl backdrop-blur-xl ring-1 ring-border/20 animate-in fade-in zoom-in-95 select-none"
+              >
+                {NOTE_PALETTES.map((pal) => (
+                  <button
+                    key={pal.name}
+                    type="button"
+                    title={pal.name}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      applyPalette(pal)
+                      setShowPalettePopover(false)
+                    }}
+                    className={cn(
+                      "size-4 rounded-full border transition hover:scale-125 active:scale-90",
+                      effectiveFill.toLowerCase() === pal.fill.toLowerCase() &&
+                        "ring-1 ring-primary ring-offset-1",
+                    )}
+                    style={{ backgroundColor: pal.fill, borderColor: pal.stroke }}
+                  />
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          <button
+            type="button"
+            onClick={remove}
+            className="rounded-full p-1 opacity-60 transition hover:opacity-100 hover:text-destructive"
+            title="Delete note"
+          >
+            <X className="size-3" />
+          </button>
+        </div>
       </div>
 
       <textarea
@@ -1009,6 +1253,7 @@ export function TextNode({ id, data, selected }: NodeProps) {
 
   return (
     <NodeFrame
+      id={id}
       selected={selected}
       style={{
         color: effectiveTextColor,
@@ -1068,6 +1313,7 @@ export function TaskNode({ id, data, selected }: NodeProps) {
 
   return (
     <NodeFrame
+      id={id}
       selected={selected}
       style={{
         background: d.style.fill,
@@ -1204,6 +1450,7 @@ export function ShapeNode({ id, data, selected }: NodeProps) {
 
   return (
     <NodeFrame
+      id={id}
       selected={selected}
       style={{
         color: textColor,
@@ -1301,6 +1548,7 @@ export function FrameNode({ id, data, selected }: NodeProps) {
 
   return (
     <NodeFrame
+      id={id}
       selected={selected}
       style={{
         border: `2px dashed ${d.style.stroke || (theme === "dark" ? "#475569" : "#94a3b8")}`,
@@ -1371,6 +1619,7 @@ export function ImageNode({ id, data, selected }: NodeProps) {
 
   return (
     <NodeFrame
+      id={id}
       selected={selected}
       style={{
         border: `1.5px solid ${d.style.stroke || "var(--border)"}`,

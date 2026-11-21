@@ -1,8 +1,14 @@
 import { createStore, get, set } from "idb-keyval"
 
 import { createId } from "@/lib/id"
-import { seedDeiLearningPlan, seedNodesForTemplate } from "@/lib/templates"
-import type { Board, TemplateId } from "@/types/board"
+import {
+  seedCardiologyDynamics,
+  seedDeiLearningPlan,
+  seedEdgesForTemplate,
+  seedNodesForTemplate,
+  seedUXFlowArchitecture,
+} from "@/lib/templates"
+import type { Board, KanvasEdge, KanvasNode, TemplateId } from "@/types/board"
 
 const boardsStore = createStore("kanvas", "boards")
 const BOARDS_KEY = "boards"
@@ -55,16 +61,34 @@ export async function deleteBoardById(id: string): Promise<void> {
 
 export function createBoardRecord(input: { title: string; templateId?: TemplateId }): Board {
   const now = Date.now()
-  const isCustomTemplate = input.templateId && input.templateId !== "blank"
-  const dei = seedDeiLearningPlan()
+  const templateId = input.templateId ?? "blank"
+  let initialNodes: KanvasNode[] = []
+  let initialEdges: KanvasEdge[] = []
+
+  if (templateId === "dei") {
+    const dei = seedDeiLearningPlan()
+    initialNodes = dei.nodes
+    initialEdges = dei.edges
+  } else if (templateId === "cardiology") {
+    const cardio = seedCardiologyDynamics()
+    initialNodes = cardio.nodes
+    initialEdges = cardio.edges
+  } else if (templateId === "uxflow") {
+    const ux = seedUXFlowArchitecture()
+    initialNodes = ux.nodes
+    initialEdges = ux.edges
+  } else if (templateId !== "blank") {
+    initialNodes = seedNodesForTemplate(templateId)
+    initialEdges = seedEdgesForTemplate(templateId)
+  }
 
   return {
     ...emptyBoardState(),
     id: createId("board"),
-    title: input.title.trim() || "Untitled board",
-    templateId: input.templateId ?? "blank",
-    nodes: isCustomTemplate ? seedNodesForTemplate(input.templateId!) : dei.nodes,
-    edges: isCustomTemplate ? [] : dei.edges,
+    title: input.title.trim() || (templateId === "blank" ? "Untitled board" : `${templateId} board`),
+    templateId,
+    nodes: initialNodes,
+    edges: initialEdges,
     createdAt: now,
     updatedAt: now,
   }
