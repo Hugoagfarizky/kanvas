@@ -230,7 +230,10 @@ export function DashboardPage() {
       <SiteHeader />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-5 sm:px-6">
-        <Hero onStart={() => void handleCreate("blank")} />
+        <Hero
+          onStart={() => void handleCreate("blank")}
+          onCreateTemplate={(id) => void handleCreate(id)}
+        />
 
         {loadError ? (
           <div
@@ -406,10 +409,10 @@ export function DashboardPage() {
           <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className="font-display text-3xl tracking-tight sm:text-4xl">
-                Start from a shape
+                Start from a template
               </h2>
               <p className="mt-1.5 text-sm text-muted-foreground">
-                Four starting points. Rearrange everything later.
+                Signature layouts inspired by Dei learning roadmaps, cardiology dynamics, and UX flow architecture.
               </p>
             </div>
             <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
@@ -417,7 +420,7 @@ export function DashboardPage() {
             </span>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {TEMPLATES.map((template) => (
               <TemplateCard
                 key={template.id}
