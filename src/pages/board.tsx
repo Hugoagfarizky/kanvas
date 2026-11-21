@@ -1,5 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ArrowLeft, Compass, Download, Image as ImageIcon, Keyboard, RefreshCw, X } from "lucide-react"
+import {
+  ArrowLeft,
+  ChevronDown,
+  Clock,
+  Compass,
+  Download,
+  GraduationCap,
+  Image as ImageIcon,
+  Keyboard,
+  Mail,
+  RefreshCw,
+  Sliders,
+  Users,
+  X,
+} from "lucide-react"
 import { lazy, Suspense, useEffect, useRef, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 
@@ -26,6 +40,8 @@ export function BoardPage() {
   const { theme } = useTheme()
   const [board, setBoard] = useState<Board | null>(null)
   const [showShortcuts, setShowShortcuts] = useState(false)
+  const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const [activeNavTab, setActiveNavTab] = useState<"plan" | "team" | "timeline" | "messages" | "settings">("plan")
   const [loadState, setLoadState] = useState<LoadState>(id ? "loading" : "missing")
   const [saveState, setSaveState] = useState<SaveState>("saved")
   const [reloadToken, setReloadToken] = useState(0)
@@ -203,21 +219,27 @@ export function BoardPage() {
 
   return (
     <div className="flex min-h-svh flex-col">
-      <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-border/70 bg-background/80 px-4 backdrop-blur-md sm:px-6">
-        <div className="flex min-w-0 items-center gap-2">
+      {/* Sleek Dei Dark Header with Center Scallop Cutout */}
+      <header className="relative flex h-16 shrink-0 items-center justify-between gap-4 border-b border-white/10 bg-[#0f1115] px-4 text-white sm:px-6 z-40 select-none shadow-md">
+        {/* Left: Brand & Board Title */}
+        <div className="flex min-w-0 items-center gap-2.5">
           <Link
             to="/"
             aria-label="Back to boards"
-            className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "rounded-full hover:bg-card/90 hover:shadow-xs transition")}
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "icon" }),
+              "rounded-full text-white/80 hover:bg-white/10 hover:text-white transition",
+            )}
           >
             <ArrowLeft className="size-4" />
           </Link>
-          <span className="hidden h-5 w-px shrink-0 bg-border/80 sm:block" />
+          <span className="hidden h-5 w-px shrink-0 bg-white/20 sm:block" />
+
+          <span className="font-sans text-xl font-black tracking-tight text-white">Dei</span>
 
           {loadState === "ready" && board ? (
-            <div className="flex items-center gap-1.5 rounded-full border border-border/70 bg-card/70 px-3 py-1 shadow-xs backdrop-blur-xs transition focus-within:border-primary/50 focus-within:bg-card">
-              <span className="hidden text-xs font-semibold text-muted-foreground sm:inline">Kanvas</span>
-              <span className="hidden text-xs text-muted-foreground/50 sm:inline">/</span>
+            <div className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 shadow-xs backdrop-blur-xs transition focus-within:border-white/40 focus-within:bg-white/10">
+              <span className="hidden text-xs text-white/50 sm:inline">/</span>
               <input
                 value={board.title}
                 onChange={(event) => handleTitleChange(event.target.value)}
@@ -229,17 +251,85 @@ export function BoardPage() {
                 }}
                 aria-label="Board title"
                 spellCheck={false}
-                className="w-[min(48vw,22rem)] truncate bg-transparent font-sans text-sm font-semibold leading-none outline-none sm:text-base text-foreground"
+                className="w-[min(38vw,16rem)] truncate bg-transparent font-sans text-xs sm:text-sm font-semibold text-white outline-none placeholder:text-white/40"
               />
             </div>
           ) : (
-            <span className="px-2 font-display text-xl text-muted-foreground sm:text-2xl">
-              Board
-            </span>
+            <span className="px-2 font-display text-lg text-white/60">Board</span>
           )}
         </div>
 
-        <div className="flex shrink-0 items-center gap-1.5">
+        {/* Center: Dei Navigation Tabs */}
+        <div className="hidden md:flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1 shadow-inner backdrop-blur-md">
+          <button
+            type="button"
+            onClick={() => setActiveNavTab("plan")}
+            className={cn(
+              "flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-semibold transition",
+              activeNavTab === "plan"
+                ? "bg-white/15 text-white ring-1 ring-white/20 shadow-xs"
+                : "text-white/60 hover:text-white hover:bg-white/10",
+            )}
+          >
+            <GraduationCap className="size-3.5" />
+            <span>Learning Plan</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveNavTab("team")}
+            className={cn(
+              "flex size-7.5 items-center justify-center rounded-full transition",
+              activeNavTab === "team"
+                ? "bg-white/15 text-white shadow-xs"
+                : "text-white/60 hover:text-white hover:bg-white/10",
+            )}
+            title="Team & Collaborators"
+          >
+            <Users className="size-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveNavTab("timeline")}
+            className={cn(
+              "flex size-7.5 items-center justify-center rounded-full transition",
+              activeNavTab === "timeline"
+                ? "bg-white/15 text-white shadow-xs"
+                : "text-white/60 hover:text-white hover:bg-white/10",
+            )}
+            title="Timeline & Schedule"
+          >
+            <Clock className="size-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveNavTab("messages")}
+            className={cn(
+              "flex size-7.5 items-center justify-center rounded-full transition",
+              activeNavTab === "messages"
+                ? "bg-white/15 text-white shadow-xs"
+                : "text-white/60 hover:text-white hover:bg-white/10",
+            )}
+            title="Messages"
+          >
+            <Mail className="size-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveNavTab("settings")}
+            className={cn(
+              "flex size-7.5 items-center justify-center rounded-full transition",
+              activeNavTab === "settings"
+                ? "bg-white/15 text-white shadow-xs"
+                : "text-white/60 hover:text-white hover:bg-white/10",
+            )}
+            title="Settings & Config"
+          >
+            <Sliders className="size-3.5" />
+          </button>
+        </div>
+
+        {/* Right: Save Status & Ellington Thom Profile Pill */}
+        <div className="flex shrink-0 items-center gap-2">
           {loadState === "ready" ? (
             <span
               role="status"
@@ -250,60 +340,129 @@ export function BoardPage() {
                   : undefined
               }
               className={cn(
-                "hidden items-center gap-1.5 rounded-full border border-border/80 bg-card/90 px-3 py-1 text-[11px] font-semibold text-muted-foreground shadow-xs sm:inline-flex",
-                saveState === "error" && "border-destructive/30 text-destructive",
+                "hidden items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold text-white/80 shadow-xs sm:inline-flex",
+                saveState === "error" && "border-destructive/40 text-rose-300",
               )}
             >
               <span
                 className={cn(
                   "size-2 rounded-full",
                   saveState === "saved"
-                    ? "bg-emerald-500 ring-2 ring-emerald-500/20"
+                    ? "bg-emerald-400 ring-2 ring-emerald-400/20"
                     : saveState === "saving"
-                      ? "animate-pulse bg-amber-500 ring-2 ring-amber-500/20"
-                      : "bg-destructive ring-2 ring-destructive/20",
+                      ? "animate-pulse bg-amber-400 ring-2 ring-amber-400/20"
+                      : "bg-rose-500 ring-2 ring-rose-500/20",
                 )}
               />
               {saveLabel}
             </span>
           ) : null}
 
-          {loadState === "ready" ? (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowShortcuts(true)}
-                aria-label="Keyboard shortcuts"
-                title="Keyboard shortcuts"
-                className="rounded-full hover:bg-card/90 hover:shadow-xs transition"
-              >
-                <Keyboard className="size-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleExport}
-                aria-label="Export board as JSON"
-                title="Export board as JSON"
-                className="rounded-full hover:bg-card/90 hover:shadow-xs transition"
-              >
-                <Download className="size-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => void handleExportPng()}
-                aria-label="Export board as PNG"
-                title="Export board as PNG"
-                className="rounded-full hover:bg-card/90 hover:shadow-xs transition"
-              >
-                <ImageIcon className="size-4" />
-              </Button>
-            </>
-          ) : null}
+          {/* User Profile Pill matching Dei reference */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowProfileMenu((prev) => !prev)}
+              className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-2 py-1 transition hover:bg-white/15 active:scale-95 shadow-xs"
+              title="User profile & board settings"
+            >
+              <div className="flex size-7 items-center justify-center rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 font-bold text-xs text-white ring-2 ring-white/20">
+                ET
+              </div>
+              <div className="hidden sm:flex flex-col text-left leading-tight pr-1">
+                <span className="text-xs font-bold text-white">Ellington Thom</span>
+                <span className="text-[10px] text-white/60">annette@gmail.com</span>
+              </div>
+              <ChevronDown className="size-3.5 text-white/60" />
+            </button>
 
-          <ThemeToggle />
+            {/* Profile Dropdown */}
+            {showProfileMenu ? (
+              <div className="absolute right-0 top-12 z-50 min-w-56 rounded-2xl border border-white/15 bg-[#161922] p-2 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-100 text-white">
+                <div className="border-b border-white/10 px-3 py-2 sm:hidden">
+                  <p className="text-xs font-bold text-white">Ellington Thom</p>
+                  <p className="text-[10px] text-white/60">annette@gmail.com</p>
+                </div>
+                <div className="p-1 space-y-1 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowShortcuts(true)
+                      setShowProfileMenu(false)
+                    }}
+                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-white/80 hover:bg-white/10 hover:text-white transition"
+                  >
+                    <Keyboard className="size-3.5" />
+                    <span>Keyboard shortcuts</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleExport()
+                      setShowProfileMenu(false)
+                    }}
+                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-white/80 hover:bg-white/10 hover:text-white transition"
+                  >
+                    <Download className="size-3.5" />
+                    <span>Export board as JSON</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void handleExportPng()
+                      setShowProfileMenu(false)
+                    }}
+                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-white/80 hover:bg-white/10 hover:text-white transition"
+                  >
+                    <ImageIcon className="size-3.5" />
+                    <span>Export board as PNG</span>
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          {/* Quick utility action buttons preserving exact test accessibility */}
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowShortcuts(true)}
+              aria-label="Keyboard shortcuts"
+              title="Keyboard shortcuts"
+              className="rounded-full text-white/80 hover:bg-white/10 hover:text-white transition size-8"
+            >
+              <Keyboard className="size-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleExport}
+              aria-label="Export board as JSON"
+              title="Export board as JSON"
+              className="rounded-full text-white/80 hover:bg-white/10 hover:text-white transition size-8"
+            >
+              <Download className="size-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => void handleExportPng()}
+              aria-label="Export board as PNG"
+              title="Export board as PNG"
+              className="rounded-full text-white/80 hover:bg-white/10 hover:text-white transition size-8"
+            >
+              <ImageIcon className="size-4" />
+            </Button>
+            <ThemeToggle />
+          </div>
+        </div>
+
+        {/* Center Organic Scallop Cutout Curve into Canvas */}
+        <div className="pointer-events-none absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-28 h-2.5 overflow-hidden flex justify-center">
+          <svg className="w-28 h-2.5 text-[#0f1115] fill-current" viewBox="0 0 112 10">
+            <path d="M0 0 C28 0 38 10 56 10 C74 10 84 0 112 0 Z" />
+          </svg>
         </div>
       </header>
 

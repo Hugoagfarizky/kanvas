@@ -1,7 +1,7 @@
 import { createStore, get, set } from "idb-keyval"
 
 import { createId } from "@/lib/id"
-import { seedNodesForTemplate } from "@/lib/templates"
+import { seedDeiLearningPlan, seedNodesForTemplate } from "@/lib/templates"
 import type { Board, TemplateId } from "@/types/board"
 
 const boardsStore = createStore("kanvas", "boards")
@@ -55,12 +55,16 @@ export async function deleteBoardById(id: string): Promise<void> {
 
 export function createBoardRecord(input: { title: string; templateId?: TemplateId }): Board {
   const now = Date.now()
+  const isCustomTemplate = input.templateId && input.templateId !== "blank"
+  const dei = seedDeiLearningPlan()
 
   return {
     ...emptyBoardState(),
     id: createId("board"),
     title: input.title.trim() || "Untitled board",
     templateId: input.templateId ?? "blank",
+    nodes: isCustomTemplate ? seedNodesForTemplate(input.templateId!) : dei.nodes,
+    edges: isCustomTemplate ? [] : dei.edges,
     createdAt: now,
     updatedAt: now,
   }
@@ -71,11 +75,6 @@ export async function createBoard(input: {
   templateId?: TemplateId
 }): Promise<Board> {
   const board = createBoardRecord(input)
-
-  if (input.templateId && input.templateId !== "blank") {
-    board.nodes = seedNodesForTemplate(input.templateId)
-  }
-
   await saveBoard(board)
   return board
 }

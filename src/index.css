@@ -150,14 +150,18 @@
 }
 
 .react-flow__edge-path {
-  stroke: var(--foreground) !important;
-  opacity: 0.65;
+  stroke: #10b981;
+  stroke-width: 2.5;
+  stroke-dasharray: 6 6;
+  opacity: 0.95;
+  transition: stroke 0.2s ease, stroke-width 0.2s ease;
 }
 
 .react-flow__edge.selected .react-flow__edge-path {
-  stroke: var(--primary) !important;
+  stroke: #059669 !important;
   opacity: 1;
-  stroke-width: 2.5;
+  stroke-width: 3.5;
+  filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.5));
 }
 
 .react-flow__handle {

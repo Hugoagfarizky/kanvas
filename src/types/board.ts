@@ -1,4 +1,12 @@
-export type TemplateId = "blank" | "brainstorm" | "project" | "weekly" | "retro"
+export type TemplateId =
+  | "blank"
+  | "brainstorm"
+  | "project"
+  | "weekly"
+  | "retro"
+  | "dei"
+  | "cardiology"
+  | "uxflow"
 
 export type Tool =
   | "select"
@@ -27,7 +35,33 @@ export type NodeStyle = {
   fontSize?: number
 }
 
-export type NoteData = { text: string; tag?: string }
+export type NoteData = {
+  text?: string
+  title?: string
+  subtitle?: string
+  tag?: string
+  category?: string
+  badgeIcon?: string
+  status?: "Completed" | "Upcoming" | "In Progress"
+  duration?: string
+  avatars?: string[]
+  isMedia?: boolean
+  isPlaying?: boolean
+  date?: string
+  time?: string
+  isClinical?: boolean
+  diagnosis?: string
+  vitals?: { hr?: string; bp?: string; o2?: string; temp?: string }
+  patient?: { name: string; age: number; gender: string }
+  chartType?: "bp" | "ecg"
+  chartValue?: string
+  chartDelta?: string
+  isForm?: boolean
+  formFields?: string[]
+  isMedication?: boolean
+  isSymptoms?: boolean
+  isScrubber?: boolean
+}
 export type TextData = { text: string }
 export type TaskItem = { id: string; text: string; done: boolean }
 export type TaskData = { title: string; items: TaskItem[] }

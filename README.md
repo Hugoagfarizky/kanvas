@@ -23,45 +23,81 @@ No account. No cloud. Everything stays in your browser.
 
 ![Kanvas demo](docs/demo.gif)
 
-## Canvas Features & Tools
+## Canvas Features & Reference Dashboards
 
-Kanvas provides an infinite creative surface for brainstorming, sketching, planning, and organizing work. Everything is accessible via the top-center floating dock, context menus, and keyboard shortcuts.
+Kanvas provides an infinite creative surface for brainstorming, sketching, planning, clinical tracking, and UX architecture. Everything is accessible via the top floating dock, context menus, and keyboard shortcuts.
 
-### 1. Navigation & Viewport
-- **Select Tool (`V`)**: Click or drag to select, move, resize, and rotate nodes.
-- **Pan / Hand Tool (`H`)**: Pan and glide across the infinite canvas without inadvertently selecting or moving elements.
-- **Marquee Selection (`Shift + Drag`)**: Drag a selection rectangle over multiple objects to group-select them.
-- **Zoom Controls (`+`, `-`, `0`)**: Zoom in, zoom out, or press `0` to automatically fit all board content on screen.
-- **MiniMap**: Live overview in the bottom-right corner for spatial orientation and fast jumps across large boards.
+### 1. Dei Learning Plan & Events (Reference 3 & 4)
+- **Roadmap Bento Cards**:
+  - Interactive objective steps (`Medical Terminology`, `Anatomy and Physiology`, `Medical Ethics and Professionalism`, `Disease Pathophysiology`).
+  - Top-right circular mint badge (`+`, `🧠`, `🩺`, `🔬`): Click to cycle icons.
+  - Interactive status pill: Toggle between `Completed 🌿` and `Upcoming 🕒`.
+  - Action dots: `···` cycle tags, `✕` delete step, `✓` quick toggle done.
+- **Tilted Lilac Media Course Card (`Pharmacology Basics`)**:
+  - Tilted at -8° with animated audio play button and pulsing glowing ring.
+  - Duration pill (`🎧 Watching 00:30`) and trio avatar stack (`👦👧🧔`).
+- **Schedule Events Stack (`My Events 🫡`)**:
+  - Right-aligned pastel event cards: `Webinar` (Sky blue with time badge), `Lesson` (Lilac), `Task` (Butter yellow & Mint green).
+- **Emerald Dotted Connectors**:
+  - Custom `#10b981` green dotted paths connecting roadmap steps with smooth curves.
+- **Dynamic Bento Stats Island**:
+  - Floating top center pill with live Search and 3 Bento stat counters: `Total`, `Completed 🎉`, `Upcoming`. Clicking stats dims non-matching cards for instant focus.
 
-### 2. Creation Primitives & Nodes
-- **Sticky Notes (`N`)**: Classic colored sticky notes for brainstorming, ideas, and quick thoughts. Text color automatically calculates optimal WCAG contrast against note fills.
-- **Text Blocks (`T`)**: Borderless text for diagram headers, floating callouts, flowchart labels, or captions. Text colors dynamically adapt to light and dark modes.
-- **Task Checklists**: Interactive task cards with toggleable checkmarks, easy item additions on `Enter`, and delete actions. Text contrast adjusts dynamically to prevent washed-out labels.
-- **Geometric Shapes**: Rectangles, rounded rectangles, circles/ellipses, and diamonds with centered labels for flowcharts, system diagrams, and architectural mapping.
-- **Grouping Frames**: Dashed organizational containers with editable title headers to divide work into stages (e.g., _Now / Next / Later_ or _Monday / Wednesday / Friday_).
-- **Images (Device Upload, Drag & Drop, Paste)**:
-  - **Upload from Device**: Click the upload icon or button to open your native file picker.
-  - **Drag & Drop**: Drag image files directly from your computer file manager and drop them anywhere onto the canvas.
-  - **Clipboard Paste (`Ctrl + V`)**: Copy screenshots or images from other apps and paste them straight onto the board.
-  - **Fit Modes & Controls**: Hover toolbar to toggle between `contain` (entire image visible) and `cover` (fills the node frame), replace from device, or remove.
+### 2. Cardiology Treatment Dynamics (Reference 1)
+- **Patient Vitals Banner**:
+  - Patient card for `Tiffany Woodward` (Female, 24) with diagnosis `Hypertension`.
+  - 4 Vitals chips: Heart Rate (`89 bpm`), Blood Pressure (`100/67`), Oxygen (`98%`), and Temperature (`36.8°C`).
+  - 6 Category filter pills: `Office Visits`, `Medications`, `Labs`, `Procedures`, `Hospitalizations`, `Imaging`.
+- **Medication Capsule Pills**:
+  - Dark pill badges with capsule icons: `Aspirin x2` and `Bisoprolol x3`.
+- **Dynamic Blood Pressure Curves**:
+  - Yellow and grey wave charts with systolic/diastolic values, weekly averages, and delta tags (`+10 ↗` / `-20 ↘`).
+- **Symptoms Card**:
+  - Human body silhouette with highlighted chest pain point and `Headache reported` tag.
+- **Live ECG Cardiac Rhythm Card**:
+  - Real ECG sinus rhythm wave with pulsating heart icon and Lead II 25mm/s indicator.
+- **Month Timeline Scrubber**:
+  - Bottom timeline bar with calendar icon, `Jan 2022` through `Sep`, and notification badges (`Aug (3)`, `Sep (6)`).
 
-### 3. Freehand Drawing & Connectors
-- **Pen Tool (`P`)**: Smooth, pressure-sensitive freehand sketching powered by `perfect-freehand`. Automatically adopts contrast-safe ink in dark mode, with a secondary palette of ink colors (Slate, Blue, Emerald, Amber, Rose, Purple) and stroke sizes (Fine, Normal, Broad).
-- **Highlighter Tool**: Semi-transparent highlighter for emphasizing key text, drawings, and nodes with vivid neon colors (Yellow, Green, Cyan, Pink, Orange).
-- **Geometry Eraser (`E`)**: Intelligent stroke eraser that deletes touched stroke segments without altering nodes or images.
-- **Smart Connectors**: Drag from connector handles on node sides to link nodes together. Double-click any connector edge to add or edit descriptive labels.
+### 3. UX Architecture Flow (Reference 2: Figma Style)
+- **Decision Tree & Start Node**:
+  - Centered blue pill `Sign up example` branching into two decision paths.
+- **Interactive Wireframe Form Cards**:
+  - `Create a company workspace`: Instructions, personal info fields (`Name`, `Surname`, `Email`, `Phone number`, `Password`), primary `Sign up` button, and social sign-in buttons (`Google`, `Facebook`).
+  - `Join your company workspace`: `E-mail` input and `Join` button.
+  - `Email is found`: Dialog card with `Resend the link` button.
+- **Blue Curved Arrow Connectors**:
+  - Blue bezier spline connectors (`#3b82f6`) with closed arrowheads.
 
-### 4. Inspector & Multi-Selection Alignment
-- **Style Inspector Panel**: Docked neatly on the top-right (never obscuring the MiniMap). Offers 1-click WCAG-compliant color presets, custom fill/stroke/text pickers, font size steps, shape switcher, image fit toggles, and rotation sliders.
-- **Align & Distribute Toolbar**: Appears when 2 or more nodes are selected. Align left, center, right, top, middle, bottom, or distribute spacing evenly horizontally and vertically.
+### 4. Interactive Left Dock & Figma Layers Panel
+- **Total Items Badge**: Live count of cards and elements on canvas.
+- **Figma-Style Layers Drawer (`≡`)**:
+  - Tree view with `Page 1 ▾`, `+ Add Layer`, and node type icons.
+  - One-click canvas centering: Click any layer to smoothly pan and zoom to it.
+  - Per-node visibility toggle (`Eye` / `EyeOff`) to hide/show nodes.
+  - Per-node lock toggle (`Lock` / `Unlock`) to freeze nodes in place.
+- **Template & View Switcher (`⊞`)**:
+  - Instantly load **Dei Learning Plan**, **Cardiology Dynamics**, **UX Architecture Flow**, or **Clean Canvas**.
+  - Canvas grid background switcher (`Dots`, `Lines`, `Clean`).
+- **Activity & Reminders Modal (`🔔 29`)**:
+  - 29 interactive upcoming activities and milestones with direct **Focus** jump buttons.
+  - Keyboard shortcuts reference guide.
+- **Smooth Zoom Controls**:
+  - Quick `+` and `-` zoom steps.
 
-### 5. Keyboard Shortcuts & Local-First Persistence
-- **History (`Ctrl + Z` / `Ctrl + Y`)**: 50-step undo/redo buffer for nodes and ink.
-- **Clipboard (`Ctrl + C`, `Ctrl + V`, `Ctrl + D`)**: Copy, paste, duplicate, and delete elements easily.
-- **Keyboard Shortcuts Cheatsheet (`?` / Header icon)**: Quick reference modal showing all platform keybindings.
-- **Local-First & Offline**: Saved automatically to browser IndexedDB with zero latency, zero cloud tracking, and full offline PWA support.
-- **Export Options**: High-resolution PNG export (with theme-matching background) and full board JSON backup for import/export.
+### 5. Sculpted Bottom Dock & Quick Add Tools
+- **7 Circular Color-Coded Tools**:
+  1. `T` (Lilac): Text note block.
+  2. `A` (Sky blue): Roadmap objective Bento card.
+  3. `🎴` (Pink): Media / Audio lecture course card.
+  4. `📋` (Yellow): Event / Schedule card.
+  5. `💬` (Teal): Comment note.
+  6. `🎯` (Mint): Milestone shape node.
+  7. `+` (Dark): Quick Add popover (primitives, device image upload, pen, highlighter, template switchers).
+- **Canvas Lock Toggle**: Dedicated padlock button to freeze canvas pan and drag.
+- **Maximize Button (`⤢`)**: Bottom-right circular button to fit and center all board elements on screen (`0`).
+
+### 6. Drawing, Connectors & Media Tools
 
 ## Status
 
