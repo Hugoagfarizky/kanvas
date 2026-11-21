@@ -793,7 +793,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
   return (
     <HistoryContext.Provider value={{ push: pushHistory }}>
       <div
-        className="relative h-full w-full select-none overflow-hidden"
+        className="absolute inset-0 select-none overflow-hidden"
         onDragOver={handleCanvasDragOver}
         onDragLeave={handleCanvasDragLeave}
         onDrop={handleCanvasDrop}
