@@ -109,14 +109,14 @@ export function getOptimalMutedColor(bgColor: string, isDarkMode = false): strin
 
 // Preset color palettes inspired by modern bento/pill canvas UI (Lilac, Mint, Butter, Sky, Peach)
 export const NOTE_PALETTES = [
-  { name: "Butter", fill: "#fef9c3", stroke: "#fde047", text: "#713f12", tag: "Task 📋" },
-  { name: "Lilac", fill: "#f3e8ff", stroke: "#d8b4fe", text: "#581c87", tag: "Idea 💡" },
-  { name: "Mint", fill: "#ecfdf5", stroke: "#a7f3d0", text: "#065f46", tag: "Done 🌿" },
-  { name: "Sky", fill: "#f0f9ff", stroke: "#bae6fd", text: "#0369a1", tag: "Plan 🎯" },
-  { name: "Peach", fill: "#fff1f2", stroke: "#fecdd3", text: "#9f1239", tag: "Note 📌" },
-  { name: "Coral", fill: "#ffedd5", stroke: "#fed7aa", text: "#9a3412", tag: "Notice ⚠️" },
-  { name: "White", fill: "#ffffff", stroke: "#e2e8f0", text: "#0f172a", tag: "Card 📄" },
-  { name: "Dark", fill: "#1e222d", stroke: "#333d4f", text: "#f8fafc", tag: "Dark 🌙" },
+  { name: "Butter", fill: "#fef9c3", stroke: "#fde047", text: "#713f12", tag: "Task" },
+  { name: "Lilac", fill: "#f3e8ff", stroke: "#d8b4fe", text: "#581c87", tag: "Idea" },
+  { name: "Mint", fill: "#ecfdf5", stroke: "#a7f3d0", text: "#065f46", tag: "Done" },
+  { name: "Sky", fill: "#f0f9ff", stroke: "#bae6fd", text: "#0369a1", tag: "Plan" },
+  { name: "Peach", fill: "#fff1f2", stroke: "#fecdd3", text: "#9f1239", tag: "Note" },
+  { name: "Coral", fill: "#ffedd5", stroke: "#fed7aa", text: "#9a3412", tag: "Notice" },
+  { name: "White", fill: "#ffffff", stroke: "#e2e8f0", text: "#0f172a", tag: "Card" },
+  { name: "Dark", fill: "#1e222d", stroke: "#333d4f", text: "#f8fafc", tag: "Dark" },
 ]
 
 export const SHAPE_PALETTES = [

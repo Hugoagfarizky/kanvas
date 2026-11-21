@@ -36,7 +36,7 @@ export function BoardCard({
               <div className="absolute -left-2 top-4 w-28 -rotate-3 rounded-2xl border border-amber-300/60 bg-amber-100/90 p-2.5 shadow-sm dark:bg-amber-950/40 dark:border-amber-700/50">
                 <div className="flex items-center gap-1">
                   <span className="size-1.5 rounded-full bg-amber-500" />
-                  <span className="text-[9px] font-semibold text-amber-800 dark:text-amber-300">Idea 💡</span>
+                  <span className="text-[9px] font-semibold text-amber-800 dark:text-amber-300">Idea</span>
                 </div>
                 <div className="mt-1.5 space-y-1">
                   <div className="h-1.5 w-14 rounded-full bg-amber-900/20 dark:bg-amber-300/20" />
@@ -47,7 +47,7 @@ export function BoardCard({
               <div className="absolute -bottom-2 right-4 w-24 rotate-2 rounded-2xl border border-sky-300/60 bg-sky-100/90 p-2 shadow-sm dark:bg-sky-950/40 dark:border-sky-700/50">
                 <div className="flex items-center gap-1">
                   <span className="size-1.5 rounded-full bg-sky-500" />
-                  <span className="text-[9px] font-semibold text-sky-800 dark:text-sky-300">Plan 🎯</span>
+                  <span className="text-[9px] font-semibold text-sky-800 dark:text-sky-300">Plan</span>
                 </div>
                 <div className="mt-1 space-y-1">
                   <div className="h-1.5 w-12 rounded-full bg-sky-900/20 dark:bg-sky-300/20" />

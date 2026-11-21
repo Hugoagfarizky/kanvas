@@ -259,11 +259,11 @@ export function DashboardPage() {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-card/90 px-3 py-0.5 text-xs font-semibold text-muted-foreground shadow-xs">
-                  <span>Workspace 📂</span>
+                  <span>Workspace</span>
                 </span>
                 <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
                   <span className="size-1.5 rounded-full bg-emerald-500" />
-                  Local-First 🌿
+                  Local-First
                 </span>
               </div>
               <h2 className="font-display text-3xl tracking-tight sm:text-4xl">Your boards</h2>

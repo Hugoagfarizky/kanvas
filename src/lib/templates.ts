@@ -114,7 +114,7 @@ function note(
   w = 220,
   h = 140,
   style = NOTE_STYLE_BUTTER,
-  tag = "Note 📌",
+  tag = "Note",
 ): KanvasNode {
   return {
     id,
@@ -181,7 +181,7 @@ export function seedDeiLearningPlan(): { nodes: KanvasNode[]; edges: any[] } {
         text: "Learn basic medical language for effective communication.",
         status: "Completed",
         badgeIcon: "+",
-        tag: "Roadmap 🎯",
+        tag: "Roadmap",
       },
     },
 
@@ -199,8 +199,8 @@ export function seedDeiLearningPlan(): { nodes: KanvasNode[]; edges: any[] } {
         text: "Learn basic medical language for effective communication.",
         isMedia: true,
         duration: "00:30",
-        avatars: ["👦", "👧", "🧔"],
-        tag: "Media 🎧",
+        avatars: ["ET", "AS", "MR"],
+        tag: "Media",
       },
     },
 
@@ -216,8 +216,8 @@ export function seedDeiLearningPlan(): { nodes: KanvasNode[]; edges: any[] } {
         subtitle: "Understand the structure and function of the human body.",
         text: "Understand the structure and function of the human body.",
         status: "Completed",
-        badgeIcon: "🧠",
-        tag: "Roadmap 🎯",
+        badgeIcon: "01",
+        tag: "Roadmap",
       },
     },
 
@@ -233,8 +233,8 @@ export function seedDeiLearningPlan(): { nodes: KanvasNode[]; edges: any[] } {
         subtitle: "Understand ethical principles and professionalism in healthcare.",
         text: "Understand ethical principles and professionalism in healthcare.",
         status: "Upcoming",
-        badgeIcon: "🩺",
-        tag: "Roadmap 🎯",
+        badgeIcon: "02",
+        tag: "Roadmap",
       },
     },
 
@@ -250,8 +250,8 @@ export function seedDeiLearningPlan(): { nodes: KanvasNode[]; edges: any[] } {
         subtitle: "Study the cellular and molecular basis of common diseases.",
         text: "Study the cellular and molecular basis of common diseases.",
         status: "Upcoming",
-        badgeIcon: "🔬",
-        tag: "Roadmap 🎯",
+        badgeIcon: "03",
+        tag: "Roadmap",
       },
     },
 
@@ -267,7 +267,7 @@ export function seedDeiLearningPlan(): { nodes: KanvasNode[]; edges: any[] } {
         date: "Tu, 25.03",
         time: "Start at 12:30",
         text: "Understanding medical research, critical appraisal skills, and applying evidence-based guidelines in practice",
-        tag: "Webinar 💻",
+        tag: "Webinar",
       },
     },
 
@@ -282,7 +282,7 @@ export function seedDeiLearningPlan(): { nodes: KanvasNode[]; edges: any[] } {
         category: "Lesson",
         date: "We, 26.03",
         text: "Overview of healthcare delivery systems, health policy, and their impact on patient care.",
-        tag: "Lesson 🎙️",
+        tag: "Lesson",
       },
     },
 
@@ -297,7 +297,7 @@ export function seedDeiLearningPlan(): { nodes: KanvasNode[]; edges: any[] } {
         category: "Task",
         date: "Th, 27.03",
         text: "Examination of major global health issues, including infectious diseases, non-communicable diseases, and healthcare disparities.",
-        tag: "Task 📋",
+        tag: "Task",
       },
     },
 
@@ -313,7 +313,7 @@ export function seedDeiLearningPlan(): { nodes: KanvasNode[]; edges: any[] } {
         category: "Task",
         date: "Fr, 28.03",
         text: "Importance of teamwork and communication among healthcare professionals for optimal patient outcomes.",
-        tag: "Task 🌿",
+        tag: "Task",
       },
     },
   ]
@@ -375,7 +375,7 @@ export function seedCardiologyDynamics(): { nodes: KanvasNode[]; edges: any[] } 
         patient: { name: "Tiffany Woodward", age: 24, gender: "Female" },
         diagnosis: "Hypertension",
         vitals: { hr: "89 bpm", bp: "100/67", o2: "98%", temp: "36.8°C" },
-        tag: "Vitals 🩺",
+        tag: "Vitals",
       },
     },
     {
@@ -402,7 +402,7 @@ export function seedCardiologyDynamics(): { nodes: KanvasNode[]; edges: any[] } 
         chartType: "bp",
         chartValue: "160 / 80",
         chartDelta: "+10",
-        tag: "Dynamics 📈",
+        tag: "Dynamics",
       },
     },
     {
@@ -415,7 +415,7 @@ export function seedCardiologyDynamics(): { nodes: KanvasNode[]; edges: any[] } 
         title: "Symptoms",
         subtitle: "Headache reported at office visit",
         isSymptoms: true,
-        tag: "Symptom ⚠️",
+        tag: "Symptom",
       },
     },
     {
@@ -454,7 +454,7 @@ export function seedCardiologyDynamics(): { nodes: KanvasNode[]; edges: any[] } 
         chartType: "bp",
         chartValue: "130 / 70",
         chartDelta: "-20",
-        tag: "Dynamics 📉",
+        tag: "Dynamics",
       },
     },
     {
@@ -467,7 +467,7 @@ export function seedCardiologyDynamics(): { nodes: KanvasNode[]; edges: any[] } 
         title: "ECG",
         subtitle: "Normal Sinus Rhythm",
         chartType: "ecg",
-        tag: "Cardiac 💓",
+        tag: "Cardiac",
       },
     },
     {
@@ -478,7 +478,7 @@ export function seedCardiologyDynamics(): { nodes: KanvasNode[]; edges: any[] } 
       style: { fill: "#ffffff", stroke: "#e2e8f0", text: "#0f172a", fontSize: 12 },
       data: {
         isScrubber: true,
-        tag: "Timeline 📅",
+        tag: "Timeline",
       },
     },
   ]
@@ -509,7 +509,7 @@ export function seedUXFlowArchitecture(): { nodes: KanvasNode[]; edges: any[] } 
       style: { fill: "#eff6ff", stroke: "#93c5fd", text: "#1e40af", fontSize: 14 },
       data: {
         title: "Sign up example",
-        tag: "Flow Start 🚀",
+        tag: "Flow Start",
       },
     },
     {
@@ -532,7 +532,7 @@ export function seedUXFlowArchitecture(): { nodes: KanvasNode[]; edges: any[] } 
           "Sign up with Google",
           "Sign up with Facebook",
         ],
-        tag: "Form 📝",
+        tag: "Form",
       },
     },
     {
@@ -546,7 +546,7 @@ export function seedUXFlowArchitecture(): { nodes: KanvasNode[]; edges: any[] } 
         subtitle: "Personal info",
         isForm: true,
         formFields: ["E-mail", "Join"],
-        tag: "Form 📝",
+        tag: "Form",
       },
     },
     {
@@ -560,7 +560,7 @@ export function seedUXFlowArchitecture(): { nodes: KanvasNode[]; edges: any[] } 
         subtitle: "Instructions",
         isForm: true,
         formFields: ["Resend the link"],
-        tag: "Dialog 💬",
+        tag: "Dialog",
       },
     },
   ]
@@ -596,7 +596,7 @@ export function seedNodesForTemplate(templateId: TemplateId): KanvasNode[] {
           220,
           140,
           NOTE_STYLE_LILAC,
-          "Idea 💡",
+          "Idea",
         ),
         note(
           nid(),
@@ -606,7 +606,7 @@ export function seedNodesForTemplate(templateId: TemplateId): KanvasNode[] {
           220,
           140,
           NOTE_STYLE_MINT,
-          "Plan 🎯",
+          "Plan",
         ),
         note(
           nid(),
@@ -616,7 +616,7 @@ export function seedNodesForTemplate(templateId: TemplateId): KanvasNode[] {
           220,
           140,
           NOTE_STYLE_BUTTER,
-          "Note 📌",
+          "Note",
         ),
         note(
           nid(),
@@ -626,7 +626,7 @@ export function seedNodesForTemplate(templateId: TemplateId): KanvasNode[] {
           220,
           140,
           NOTE_STYLE_SKY,
-          "Urgent ⭐",
+          "Urgent",
         ),
       ]
     case "project":
@@ -653,16 +653,16 @@ export function seedNodesForTemplate(templateId: TemplateId): KanvasNode[] {
         frame(nid(), "Monday", -320, -180, 250, 240),
         frame(nid(), "Wednesday", -50, -180, 250, 240),
         frame(nid(), "Friday", 220, -180, 250, 240),
-        note(nid(), "Weekly kick-off & goals", -300, -120, 210, 130, NOTE_STYLE_BUTTER, "Plan 🎯"),
-        note(nid(), "Mid-week prototype review", -30, -120, 210, 130, NOTE_STYLE_LILAC, "Task 📋"),
-        note(nid(), "Ship release & demo", 240, -120, 210, 130, NOTE_STYLE_MINT, "Urgent ⭐"),
+        note(nid(), "Weekly kick-off & goals", -300, -120, 210, 130, NOTE_STYLE_BUTTER, "Plan"),
+        note(nid(), "Mid-week prototype review", -30, -120, 210, 130, NOTE_STYLE_LILAC, "Task"),
+        note(nid(), "Ship release & demo", 240, -120, 210, 130, NOTE_STYLE_MINT, "Urgent"),
       ]
     case "retro":
       return [
-        frame(nid(), "Went well 🌿", -320, -180, 280, 280),
-        frame(nid(), "To improve ⚠️", -20, -180, 280, 280),
-        frame(nid(), "Action items 🎯", 280, -180, 280, 280),
-        note(nid(), "Fast releases & bento docks", -290, -120, 220, 120, NOTE_STYLE_MINT, "Idea 💡"),
+        frame(nid(), "Went well", -320, -180, 280, 280),
+        frame(nid(), "To improve", -20, -180, 280, 280),
+        frame(nid(), "Action items", 280, -180, 280, 280),
+        note(nid(), "Fast releases & bento docks", -290, -120, 220, 120, NOTE_STYLE_MINT, "Idea"),
         note(
           nid(),
           "Ensure all contrast is AA compliant",
@@ -671,9 +671,9 @@ export function seedNodesForTemplate(templateId: TemplateId): KanvasNode[] {
           220,
           120,
           NOTE_STYLE_BUTTER,
-          "Task 📋",
+          "Task",
         ),
-        note(nid(), "Write docs with visual guide", 310, -120, 220, 120, NOTE_STYLE_SKY, "Plan 🎯"),
+        note(nid(), "Write docs with visual guide", 310, -120, 220, 120, NOTE_STYLE_SKY, "Plan"),
       ]
     default:
       return seedDeiLearningPlan().nodes

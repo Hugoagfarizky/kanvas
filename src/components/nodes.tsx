@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   Activity,
+  Calendar,
   Check,
   Clock,
   Heart,
@@ -11,10 +12,12 @@ import {
   Minimize2,
   MoreHorizontal,
   Pause,
+  Pill,
   Pin,
   Play,
   Plus,
   RefreshCw,
+  Scale,
   Sparkles,
   Trash2,
   TrendingDown,
@@ -114,8 +117,8 @@ function NodeFrame({
   )
 }
 
-const NOTE_TAGS = ["Idea 💡", "Task 📋", "Note 📌", "Plan 🎯", "Urgent ⭐"]
-const BADGE_ICONS = ["+", "🧠", "🩺", "🔬", "⭐"]
+const NOTE_TAGS = ["Idea", "Task", "Note", "Plan", "Urgent"]
+const BADGE_ICONS = ["+", "01", "02", "03", "04"]
 
 export function NoteNode({ id, data, selected }: NodeProps) {
   const d = data as KanvasNodeData
@@ -124,7 +127,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
 
   const isDarkCard = !isLightColor(d.style.fill)
   const textColor = d.style.text || (isDarkCard ? "#f8fafc" : "#1e293b")
-  const currentTag = d.data?.tag ?? "Note 📌"
+  const currentTag = d.data?.tag ?? "Note"
 
   function cycleTag() {
     const nextIdx = (NOTE_TAGS.indexOf(currentTag) + 1) % NOTE_TAGS.length
@@ -162,8 +165,8 @@ export function NoteNode({ id, data, selected }: NodeProps) {
           <div className="flex items-center justify-between gap-4">
             {/* Patient Photo & Info */}
             <div className="flex items-center gap-3">
-              <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-200 to-rose-200 text-2xl shadow-xs ring-2 ring-white/50">
-                👩
+              <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 font-bold text-white text-base shadow-xs ring-2 ring-white/50">
+                TW
               </div>
               <div>
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -460,8 +463,8 @@ export function NoteNode({ id, data, selected }: NodeProps) {
       >
         <div className="flex h-full w-full items-center justify-between px-3.5 py-1">
           <div className="flex items-center gap-2">
-            <span className="flex size-6 items-center justify-center rounded-full bg-white/20 text-xs shadow-inner">
-              💊
+            <span className="flex size-6 items-center justify-center rounded-full bg-white/20 shadow-inner">
+              <Pill className="size-3 text-white" />
             </span>
             <span className="font-sans text-xs font-bold tracking-tight text-white">
               {d.data.title ?? "Aspirin x2"}
@@ -498,7 +501,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
         <div className="flex h-full w-full flex-col justify-between p-3.5">
           <div className="flex items-center justify-between">
             <h5 className="font-sans text-xs font-bold text-foreground">Symptoms</h5>
-            <span className="text-xs">⚖️</span>
+            <Scale className="size-3.5 text-muted-foreground" />
           </div>
 
           {/* Human silhouette with pain marker */}
@@ -543,7 +546,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
       >
         <div className="flex h-full w-full items-center justify-between px-5 text-xs font-semibold text-muted-foreground">
           <div className="flex items-center gap-1.5 text-foreground font-bold">
-            <span>📅</span>
+            <Calendar className="size-3.5 text-foreground" />
             <span>Jan 2022</span>
           </div>
           {["Feb", "Mar", "Apr", "May", "Jun", "Jul"].map((m) => (
@@ -562,7 +565,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
   }
 
   // --- 0H. FLOW START PILL (Reference 2: Sign up example) ---
-  if (d.data?.tag === "Flow Start 🚀" || d.data?.title === "Sign up example") {
+  if (d.data?.tag === "Flow Start" || d.data?.title === "Sign up example") {
     return (
       <NodeFrame
         selected={selected}
@@ -657,14 +660,14 @@ export function NoteNode({ id, data, selected }: NodeProps) {
 
             {/* Overlapping Avatar Stack */}
             <div className="flex items-center -space-x-2">
-              <span className="flex size-6.5 items-center justify-center rounded-full border-2 border-white bg-amber-100 text-xs shadow-xs dark:border-purple-950">
-                👦
+              <span className="flex size-6.5 items-center justify-center rounded-full border-2 border-white bg-purple-200 text-[10px] font-bold text-purple-900 shadow-xs dark:border-purple-950">
+                ET
               </span>
-              <span className="flex size-6.5 items-center justify-center rounded-full border-2 border-white bg-pink-100 text-xs shadow-xs dark:border-purple-950">
-                👧
+              <span className="flex size-6.5 items-center justify-center rounded-full border-2 border-white bg-pink-200 text-[10px] font-bold text-pink-900 shadow-xs dark:border-purple-950">
+                AS
               </span>
-              <span className="flex size-6.5 items-center justify-center rounded-full border-2 border-white bg-sky-100 text-xs shadow-xs dark:border-purple-950">
-                🧔
+              <span className="flex size-6.5 items-center justify-center rounded-full border-2 border-white bg-sky-200 text-[10px] font-bold text-sky-900 shadow-xs dark:border-purple-950">
+                MR
               </span>
             </div>
           </div>
@@ -737,7 +740,7 @@ export function NoteNode({ id, data, selected }: NodeProps) {
               )}
               title="Click to toggle status"
             >
-              <span>{isCompleted ? "Completed 🌿" : "Upcoming 🕒"}</span>
+              <span>{isCompleted ? "Completed" : "Upcoming"}</span>
             </button>
 
             {/* Actions: ... (cycle tag), X (delete), ✓ (toggle done) */}
@@ -1018,7 +1021,9 @@ export function TaskNode({ id, data, selected }: NodeProps) {
               color: doneCount === total && total > 0 ? "#10b981" : mutedColor,
             }}
           >
-            {doneCount === total && total > 0 ? "✓ " : ""}
+            {doneCount === total && total > 0 ? (
+              <Check className="inline-block size-3 mr-0.5" />
+            ) : null}
             {doneCount}/{total} done
           </span>
         ) : null}

@@ -104,7 +104,7 @@ function HeroCanvas() {
         <div className="absolute left-6 top-8 w-44 -rotate-3 rounded-3xl border border-purple-300/80 bg-purple-100/95 p-3.5 text-purple-950 shadow-xl backdrop-blur-xs dark:border-purple-600/40 dark:bg-purple-950/60 dark:text-purple-100">
           <div className="flex items-center justify-between">
             <span className="inline-flex items-center gap-1 rounded-full bg-purple-200/80 px-2 py-0.5 text-[9px] font-semibold text-purple-800 dark:bg-purple-900/60 dark:text-purple-300">
-              Watching 00:30 🎧
+              Watching 00:30
             </span>
             <div className="flex size-5 items-center justify-center rounded-full bg-purple-900 text-purple-100 dark:bg-purple-200 dark:text-purple-900">
               <span className="text-[9px] leading-none">▶</span>
@@ -120,7 +120,7 @@ function HeroCanvas() {
         <div className="absolute right-6 top-14 w-38 rotate-2 rounded-3xl border border-amber-300/80 bg-amber-100/95 p-3.5 text-amber-950 shadow-xl backdrop-blur-xs dark:border-amber-600/40 dark:bg-amber-950/60 dark:text-amber-100">
           <div className="flex items-center justify-between">
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-200/80 px-2 py-0.5 text-[9px] font-semibold text-amber-800 dark:bg-amber-900/60 dark:text-amber-300">
-              Task 📋
+              Task
             </span>
             <span className="text-[10px] text-amber-800/60 dark:text-amber-300/60">Th, 27.03</span>
           </div>
@@ -135,7 +135,7 @@ function HeroCanvas() {
         <div className="absolute bottom-10 left-12 w-48 -rotate-1 rounded-3xl border border-emerald-300/80 bg-emerald-100/95 p-3.5 text-emerald-950 shadow-xl backdrop-blur-xs dark:border-emerald-600/40 dark:bg-emerald-950/60 dark:text-emerald-100">
           <div className="flex items-center justify-between">
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-200/80 px-2 py-0.5 text-[9px] font-semibold text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300">
-              Completed 🌿
+              Completed
             </span>
           </div>
           <p className="mt-2 text-xs font-semibold">Medical Terminology</p>
