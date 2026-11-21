@@ -31,6 +31,7 @@ import {
   Frame,
   Hand,
   Highlighter,
+  Layers,
   ListTodo,
   MapPin,
   Maximize2,
@@ -269,6 +270,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
   const { zoom } = useViewport()
   const [showMiniMap, setShowMiniMap] = useState(false)
   const [showZoomMenu, setShowZoomMenu] = useState(false)
+  const [showLayers, setShowLayers] = useState(false)
 
   const [nodes, setNodes] = useState<Node[]>(() => board.nodes.map(toFlowNode))
   const [edges, setEdges] = useState<Edge[]>(() => board.edges.map(toFlowEdge))
@@ -1098,7 +1100,99 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
           >
             <MapPin className="size-4" />
           </button>
+
+          {/* Layers Toggle (Ref 2 inspired) */}
+          <button
+            type="button"
+            onClick={() => setShowLayers((v) => !v)}
+            className={cn(
+              "flex size-8 items-center justify-center rounded-full transition",
+              showLayers
+                ? "bg-accent text-accent-foreground font-semibold shadow-xs"
+                : "text-muted-foreground hover:bg-accent hover:text-foreground",
+            )}
+            title={showLayers ? "Hide Layers" : "Show Layers"}
+          >
+            <Layers className="size-4" />
+          </button>
         </div>
+
+        {/* Floating Layers Button & Inspector (Ref 2 inspired) */}
+        <button
+          type="button"
+          onClick={() => setShowLayers((v) => !v)}
+          className={cn(
+            "fixed top-20 left-6 z-40 flex items-center gap-1.5 rounded-full border border-border/80 bg-card/90 px-3 py-1.5 text-xs font-semibold shadow-xl backdrop-blur-xl ring-1 ring-border/20 transition hover:bg-accent active:scale-95",
+            showLayers ? "bg-primary text-primary-foreground hover:bg-primary/95" : "text-foreground",
+          )}
+          title="Toggle Layers"
+        >
+          <Layers className="size-3.5" />
+          <span>Layers</span>
+          <span className="rounded-full bg-foreground/10 px-1.5 py-0.2 text-[10px]">
+            {nodes.length}
+          </span>
+        </button>
+
+        {showLayers ? (
+          <div className="fixed top-29 left-6 z-40 w-68 rounded-3xl border border-border/80 bg-card/95 p-3.5 shadow-2xl backdrop-blur-xl ring-1 ring-border/20 animate-in fade-in slide-in-from-left-2 duration-150">
+            <div className="flex items-center justify-between border-b border-border/60 pb-2">
+              <div className="flex items-center gap-1.5">
+                <Layers className="size-3.5 text-primary" />
+                <span className="text-xs font-bold text-foreground">Canvas Layers</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowLayers(false)}
+                className="rounded-full p-1 text-muted-foreground transition hover:bg-accent hover:text-foreground"
+              >
+                <X className="size-3.5" />
+              </button>
+            </div>
+
+            <div className="mt-2 max-h-64 space-y-1 overflow-y-auto pr-1">
+              {nodes.length === 0 ? (
+                <p className="py-4 text-center text-xs text-muted-foreground">No layers yet</p>
+              ) : (
+                nodes.map((n) => {
+                  const kind = (n.data as any)?.kind ?? n.type?.replace("kanvas-", "")
+                  const label =
+                    (n.data as any)?.data?.title ||
+                    (n.data as any)?.data?.text ||
+                    (n.data as any)?.data?.alt ||
+                    `${kind} node`
+
+                  return (
+                    <button
+                      key={n.id}
+                      type="button"
+                      onClick={() => {
+                        setNodes((current) =>
+                          current.map((item) => ({ ...item, selected: item.id === n.id })),
+                        )
+                        const w = (n.width ?? (n.data as any)?.size?.width ?? 120) as number
+                        const h = (n.height ?? (n.data as any)?.size?.height ?? 100) as number
+                        reactFlow.setCenter(n.position.x + w / 2, n.position.y + h / 2, {
+                          duration: 250,
+                          zoom: Math.max(0.8, zoom),
+                        })
+                      }}
+                      className={cn(
+                        "flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-xs transition",
+                        n.selected
+                          ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                          : "text-foreground hover:bg-accent",
+                      )}
+                    >
+                      <span className="truncate flex-1 font-medium">{label}</span>
+                      <span className="text-[9px] uppercase font-bold opacity-60">{kind}</span>
+                    </button>
+                  )
+                })
+              )}
+            </div>
+          </div>
+        ) : null}
 
         {/* Primary Sculpted Pill Dock (Bottom-Center, inspired by Ref 3 & Ref 1) */}
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1 rounded-full border border-border/80 bg-card/90 px-3 py-1.5 shadow-2xl backdrop-blur-xl ring-1 ring-border/20 transition-all">

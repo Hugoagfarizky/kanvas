@@ -255,20 +255,29 @@ export function DashboardPage() {
           aria-busy={boards === null}
           className="scroll-mt-24 border-t border-border/70 py-12"
         >
-          <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-card/90 px-3 py-0.5 text-xs font-semibold text-muted-foreground shadow-xs">
+                  <span>Workspace 📂</span>
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                  <span className="size-1.5 rounded-full bg-emerald-500" />
+                  Local-First 🌿
+                </span>
+              </div>
               <h2 className="font-display text-3xl tracking-tight sm:text-4xl">Your boards</h2>
-              <p className="mt-1.5 text-sm text-muted-foreground">
+              <p className="mt-1 text-sm text-muted-foreground">
                 {boards === null
                   ? "Opening your local workspace…"
                   : boardCountLabel(boards.length, loadError)}
               </p>
             </div>
 
-            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <div className="flex w-full flex-col gap-2.5 sm:w-auto sm:flex-row sm:items-center">
               {hasBoards ? (
-                <div className="relative w-full sm:w-56">
-                  <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <div className="relative w-full sm:w-60">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                   <input
                     ref={searchRef}
                     type="search"
@@ -276,14 +285,14 @@ export function DashboardPage() {
                     onChange={(event) => setQuery(event.target.value)}
                     placeholder="Search boards…"
                     aria-label="Search boards"
-                    className="h-8 w-full rounded-md border border-border bg-card/60 pl-8 pr-8 text-xs outline-none transition placeholder:text-muted-foreground/70 focus:border-ring focus:ring-[3px] focus:ring-ring/25 [&::-webkit-search-cancel-button]:hidden"
+                    className="h-9 w-full rounded-full border border-border/80 bg-card/80 pl-8.5 pr-8 text-xs outline-none shadow-xs transition placeholder:text-muted-foreground/70 focus:border-ring focus:ring-[3px] focus:ring-ring/25 [&::-webkit-search-cancel-button]:hidden"
                   />
                   {query ? (
                     <button
                       type="button"
                       onClick={() => setQuery("")}
                       aria-label="Clear search"
-                      className="absolute right-1.5 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded text-muted-foreground transition hover:bg-accent hover:text-foreground"
+                      className="absolute right-2 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-accent hover:text-foreground"
                     >
                       <X className="size-3" />
                     </button>
@@ -309,14 +318,20 @@ export function DashboardPage() {
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={boards === null}
+                className="rounded-full shadow-xs"
               >
-                <Upload />
+                <Upload className="size-3.5" />
                 Import
               </Button>
 
               {hasBoards ? (
-                <Button size="sm" onClick={() => void handleCreate("blank")} disabled={creating}>
-                  {creating ? <Loader2 className="animate-spin" /> : <Plus />}
+                <Button
+                  size="sm"
+                  onClick={() => void handleCreate("blank")}
+                  disabled={creating}
+                  className="rounded-full shadow-xs"
+                >
+                  {creating ? <Loader2 className="animate-spin size-3.5" /> : <Plus className="size-3.5" />}
                   New board
                 </Button>
               ) : null}

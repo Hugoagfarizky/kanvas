@@ -19,23 +19,23 @@ export function TemplateCard({
       type="button"
       onClick={onCreate}
       disabled={disabled}
-      className="group relative flex h-full flex-col items-start gap-3 rounded-2xl border border-border bg-card p-5 text-left transition duration-200 hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-[0_18px_40px_-30px_rgba(0,0,0,0.4)] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40 disabled:pointer-events-none disabled:opacity-60"
+      className="group relative flex h-full flex-col items-start gap-3.5 rounded-3xl border border-border/80 bg-card/90 p-5.5 text-left shadow-xs transition duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40 disabled:pointer-events-none disabled:opacity-60"
     >
       <span
         className={cn(
-          "flex size-10 items-center justify-center rounded-xl transition group-hover:scale-105",
+          "flex size-11 items-center justify-center rounded-2xl shadow-xs transition duration-200 group-hover:scale-110",
           template.tint,
         )}
       >
-        <Icon className="size-5" />
+        <Icon className="size-5.5" />
       </span>
       <span className="block">
-        <span className="block font-medium">{template.name}</span>
-        <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">
+        <span className="block font-semibold text-base text-foreground">{template.name}</span>
+        <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
           {template.description}
         </span>
       </span>
-      <ArrowRight className="absolute right-4 top-4 size-4 -translate-x-1 text-muted-foreground opacity-0 transition group-hover:translate-x-0 group-hover:opacity-100" />
+      <ArrowRight className="absolute right-5 top-5 size-4 -translate-x-1 text-muted-foreground opacity-0 transition group-hover:translate-x-0 group-hover:opacity-100 group-hover:text-primary" />
     </button>
   )
 }

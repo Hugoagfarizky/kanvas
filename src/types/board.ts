@@ -27,13 +27,13 @@ export type NodeStyle = {
   fontSize?: number
 }
 
-export type NoteData = { text: string }
+export type NoteData = { text: string; tag?: string }
 export type TextData = { text: string }
 export type TaskItem = { id: string; text: string; done: boolean }
 export type TaskData = { title: string; items: TaskItem[] }
-export type ShapeData = { kind: "rect" | "ellipse" | "diamond" }
+export type ShapeData = { kind: "rect" | "round-rect" | "pill" | "ellipse" | "diamond"; text?: string }
 export type FrameData = { title: string }
-export type ImageData = { src: string; alt?: string }
+export type ImageData = { src: string; alt?: string; fit?: "contain" | "cover" }
 
 type NodeBase<TType extends NodeType, TData> = {
   id: string

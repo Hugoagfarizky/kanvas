@@ -9,20 +9,14 @@ export function Hero({ onStart }: { onStart: () => void }) {
   return (
     <section className="grid items-center gap-14 pb-16 pt-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-10 lg:pb-24 lg:pt-20">
       <div>
-        <div
-          className="animate-rise flex flex-wrap items-center gap-2.5"
-          style={{ animationDelay: "0ms" }}
-        >
+        <div className="flex flex-wrap items-center gap-2.5">
           <Badge variant="outline" className="bg-card/70">
             Open source · MIT
           </Badge>
           <span className="text-xs text-muted-foreground">No account. No cloud. No catch.</span>
         </div>
 
-        <h1
-          className="animate-rise mt-5 max-w-2xl font-display text-[3.15rem] leading-[0.98] tracking-[-0.015em] sm:text-6xl lg:text-[4.35rem]"
-          style={{ animationDelay: "60ms" }}
-        >
+        <h1 className="mt-5 max-w-2xl font-display text-[3.15rem] leading-[0.98] tracking-[-0.015em] sm:text-6xl lg:text-[4.35rem]">
           Plans, scribbles &amp;{" "}
           <span className="relative inline-block italic">
             ideas
@@ -44,31 +38,22 @@ export function Hero({ onStart }: { onStart: () => void }) {
           on one canvas.
         </h1>
 
-        <p
-          className="animate-rise mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg"
-          style={{ animationDelay: "120ms" }}
-        >
+        <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
           Kanvas is a free, open-source space to map a plan, jot rough notes, and think out loud.
           Everything is saved in your browser — no sign-up, no server, no lock-in.
         </p>
 
-        <div
-          className="animate-rise mt-8 flex flex-col gap-3 sm:flex-row"
-          style={{ animationDelay: "180ms" }}
-        >
-          <Button size="lg" onClick={onStart}>
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <Button size="lg" onClick={onStart} className="rounded-full shadow-md hover:scale-105 active:scale-95 transition-all">
             Start a board
             <ArrowRight />
           </Button>
-          <Button variant="outline" size="lg" onClick={scrollToTemplates}>
+          <Button variant="outline" size="lg" onClick={scrollToTemplates} className="rounded-full shadow-xs hover:bg-accent transition-all">
             Browse templates
           </Button>
         </div>
 
-        <ul
-          className="animate-rise mt-8 flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted-foreground"
-          style={{ animationDelay: "240ms" }}
-        >
+        <ul className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted-foreground">
           {HIGHLIGHTS.map((item) => (
             <li key={item} className="flex items-center gap-1.5">
               <Check className="size-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -115,40 +100,48 @@ function HeroCanvas() {
           />
         </svg>
 
-        <div className="absolute left-7 top-8 w-32 -rotate-[4deg] rounded-md bg-amber-200 p-3 text-amber-950 shadow-[0_12px_22px_-14px_rgba(0,0,0,0.6)]">
-          <p className="font-display text-xl leading-tight">Ship v0.1</p>
-          <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.14em] opacity-60">
-            by friday
+        {/* Lilac Tilted Card (Matching Ref 3 Pharmacology Card) */}
+        <div className="absolute left-6 top-8 w-44 -rotate-3 rounded-3xl border border-purple-300/80 bg-purple-100/95 p-3.5 text-purple-950 shadow-xl backdrop-blur-xs dark:border-purple-600/40 dark:bg-purple-950/60 dark:text-purple-100">
+          <div className="flex items-center justify-between">
+            <span className="inline-flex items-center gap-1 rounded-full bg-purple-200/80 px-2 py-0.5 text-[9px] font-semibold text-purple-800 dark:bg-purple-900/60 dark:text-purple-300">
+              Watching 00:30 🎧
+            </span>
+            <div className="flex size-5 items-center justify-center rounded-full bg-purple-900 text-purple-100 dark:bg-purple-200 dark:text-purple-900">
+              <span className="text-[9px] leading-none">▶</span>
+            </div>
+          </div>
+          <p className="mt-2 text-xs font-semibold leading-snug">Pharmacology Basics</p>
+          <p className="mt-0.5 text-[10px] text-purple-900/70 dark:text-purple-300/70">
+            Interactive visual notes
           </p>
         </div>
 
-        <div className="absolute right-7 top-16 w-28 rotate-[3deg] rounded-md bg-sky-200 p-3 text-sky-950 shadow-[0_12px_22px_-14px_rgba(0,0,0,0.6)]">
-          <p className="text-xs font-medium leading-snug">Ask 5 users what&apos;s missing</p>
-          <div className="mt-2 flex gap-1">
-            <span className="size-1.5 rounded-full bg-sky-900/30" />
-            <span className="size-1.5 rounded-full bg-sky-900/30" />
-            <span className="size-1.5 rounded-full bg-sky-900/30" />
+        {/* Butter Card (Matching Ref 3 Task Card) */}
+        <div className="absolute right-6 top-14 w-38 rotate-2 rounded-3xl border border-amber-300/80 bg-amber-100/95 p-3.5 text-amber-950 shadow-xl backdrop-blur-xs dark:border-amber-600/40 dark:bg-amber-950/60 dark:text-amber-100">
+          <div className="flex items-center justify-between">
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-200/80 px-2 py-0.5 text-[9px] font-semibold text-amber-800 dark:bg-amber-900/60 dark:text-amber-300">
+              Task 📋
+            </span>
+            <span className="text-[10px] text-amber-800/60 dark:text-amber-300/60">Th, 27.03</span>
+          </div>
+          <p className="mt-2 text-xs font-semibold">Learning sprint plan</p>
+          <div className="mt-2 flex items-center gap-1">
+            <span className="size-2 rounded-full bg-emerald-500" />
+            <span className="text-[10px] font-medium text-emerald-800 dark:text-emerald-400">2/3 completed</span>
           </div>
         </div>
 
-        <div className="absolute bottom-14 left-11 w-40 -rotate-2 rounded-md bg-emerald-200 p-3 text-emerald-950 shadow-[0_12px_22px_-14px_rgba(0,0,0,0.6)]">
-          <p className="text-xs font-medium">Ideas → plan → done</p>
-          <ul className="mt-2 space-y-1 text-[10px] font-medium">
-            {["Sketch the flow", "Name the tasks", "Ship it"].map((item, index) => (
-              <li key={item} className="flex items-center gap-1.5">
-                <span
-                  className={
-                    index === 2
-                      ? "flex size-3 items-center justify-center rounded-full border border-emerald-900/30"
-                      : "flex size-3 items-center justify-center rounded-full bg-emerald-900/70 text-emerald-50"
-                  }
-                >
-                  {index < 2 ? <Check className="size-2" strokeWidth={3} /> : null}
-                </span>
-                {item}
-              </li>
-            ))}
-          </ul>
+        {/* Mint Card (Matching Ref 3 Medical Terminology Card) */}
+        <div className="absolute bottom-10 left-12 w-48 -rotate-1 rounded-3xl border border-emerald-300/80 bg-emerald-100/95 p-3.5 text-emerald-950 shadow-xl backdrop-blur-xs dark:border-emerald-600/40 dark:bg-emerald-950/60 dark:text-emerald-100">
+          <div className="flex items-center justify-between">
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-200/80 px-2 py-0.5 text-[9px] font-semibold text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300">
+              Completed 🌿
+            </span>
+          </div>
+          <p className="mt-2 text-xs font-semibold">Medical Terminology</p>
+          <p className="mt-0.5 text-[10px] text-emerald-900/70 dark:text-emerald-300/70">
+            Effective healthcare communication
+          </p>
         </div>
 
         <div className="absolute bottom-4 right-5 rounded-full border border-border bg-background/85 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">

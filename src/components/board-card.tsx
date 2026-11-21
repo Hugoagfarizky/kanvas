@@ -3,7 +3,6 @@ import type { ReactNode } from "react"
 import { Link } from "react-router-dom"
 
 import { formatRelativeTime } from "@/lib/date"
-import { getTemplate } from "@/lib/templates"
 import { cn } from "@/lib/utils"
 import type { Board } from "@/types/board"
 
@@ -20,45 +19,45 @@ export function BoardCard({
   onDelete: (board: Board) => void
   onRename: (board: Board) => void
 }) {
-  const template = getTemplate(board.templateId)
-
   const hasContent = board.nodes.length > 0 || board.strokes.length > 0
 
   return (
     <div className="group relative">
       <Link
         to={`/board/${board.id}`}
-        className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card transition duration-200 hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-[0_20px_45px_-30px_rgba(0,0,0,0.45)] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
+        className="flex h-full flex-col overflow-hidden rounded-3xl border border-border/80 bg-card/90 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
       >
-        <div className="dot-grid relative h-28 overflow-hidden border-b border-border/80 bg-muted/25">
+        <div className="dot-grid relative m-2.5 h-32 overflow-hidden rounded-2xl border border-border/60 bg-muted/20">
           {hasContent ? (
             <BoardThumbnail board={board} />
           ) : (
             <>
-              <div className="absolute -left-3 top-5 h-16 w-24 -rotate-[4deg] rounded-lg border border-border/80 bg-card shadow-sm">
-                <div className={cn("h-1.5 rounded-t-lg", template?.bar ?? "bg-foreground/20")} />
-                <div className="space-y-1.5 p-2.5">
-                  <div className="h-1.5 w-12 rounded-full bg-foreground/15" />
-                  <div className="h-1.5 w-8 rounded-full bg-foreground/10" />
+              {/* Pastel Bento Mini Cards inside empty thumbnail matching Ref 1 & 3 */}
+              <div className="absolute -left-2 top-4 w-28 -rotate-3 rounded-2xl border border-amber-300/60 bg-amber-100/90 p-2.5 shadow-sm dark:bg-amber-950/40 dark:border-amber-700/50">
+                <div className="flex items-center gap-1">
+                  <span className="size-1.5 rounded-full bg-amber-500" />
+                  <span className="text-[9px] font-semibold text-amber-800 dark:text-amber-300">Idea 💡</span>
+                </div>
+                <div className="mt-1.5 space-y-1">
+                  <div className="h-1.5 w-14 rounded-full bg-amber-900/20 dark:bg-amber-300/20" />
+                  <div className="h-1.5 w-10 rounded-full bg-amber-900/15 dark:bg-amber-300/15" />
                 </div>
               </div>
 
-              <div className="absolute -bottom-2 right-5 h-14 w-20 rotate-[3deg] rounded-lg border border-border/80 bg-card shadow-sm">
-                <div
-                  className={cn(
-                    "h-1.5 rounded-t-lg opacity-70",
-                    template?.bar ?? "bg-foreground/20",
-                  )}
-                />
-                <div className="space-y-1.5 p-2.5">
-                  <div className="h-1.5 w-9 rounded-full bg-foreground/15" />
-                  <div className="h-1.5 w-5 rounded-full bg-foreground/10" />
+              <div className="absolute -bottom-2 right-4 w-24 rotate-2 rounded-2xl border border-sky-300/60 bg-sky-100/90 p-2 shadow-sm dark:bg-sky-950/40 dark:border-sky-700/50">
+                <div className="flex items-center gap-1">
+                  <span className="size-1.5 rounded-full bg-sky-500" />
+                  <span className="text-[9px] font-semibold text-sky-800 dark:text-sky-300">Plan 🎯</span>
+                </div>
+                <div className="mt-1 space-y-1">
+                  <div className="h-1.5 w-12 rounded-full bg-sky-900/20 dark:bg-sky-300/20" />
+                  <div className="h-1.5 w-7 rounded-full bg-sky-900/15 dark:bg-sky-300/15" />
                 </div>
               </div>
 
               <svg
                 className="absolute inset-0 h-full w-full text-foreground/15"
-                viewBox="0 0 320 112"
+                viewBox="0 0 320 128"
                 fill="none"
                 aria-hidden="true"
               >
@@ -74,20 +73,21 @@ export function BoardCard({
           )}
         </div>
 
-        <div className="flex flex-1 items-start justify-between gap-3 p-4">
+        <div className="flex flex-1 items-start justify-between gap-3 px-5 pb-4 pt-1">
           <div className="min-w-0">
-            <h3 className="truncate font-medium">{board.title}</h3>
+            <h3 className="truncate font-semibold text-sm sm:text-base text-foreground">{board.title}</h3>
             <p className="mt-0.5 text-xs text-muted-foreground">
               Edited {formatRelativeTime(board.updatedAt, now)}
             </p>
           </div>
-          <span className="mt-0.5 hidden shrink-0 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-muted-foreground sm:inline">
+          <span className="mt-0.5 hidden shrink-0 items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 sm:inline-flex">
+            <span className="size-1 rounded-full bg-emerald-500" />
             local
           </span>
         </div>
       </Link>
 
-      <div className="absolute right-2.5 top-2.5 z-10 flex items-center gap-1 sm:opacity-0 sm:transition-opacity sm:group-focus-within:opacity-100 sm:group-hover:opacity-100">
+      <div className="absolute right-4 top-4 z-10 flex items-center gap-1 rounded-full border border-border/80 bg-card/95 p-1 shadow-md backdrop-blur-md sm:opacity-0 sm:transition-opacity sm:group-focus-within:opacity-100 sm:group-hover:opacity-100">
         <CardAction label={`Rename ${board.title}`} onClick={() => onRename(board)}>
           <Pencil />
         </CardAction>

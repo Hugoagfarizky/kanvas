@@ -61,23 +61,36 @@ export function getTemplate(id: TemplateId): BoardTemplate | undefined {
   return TEMPLATES.find((template) => template.id === id)
 }
 
-const NOTE_STYLE: NodeStyle = { fill: "#fef08a", stroke: "#eab308", text: "#1e293b", fontSize: 14 }
+const NOTE_STYLE_BUTTER: NodeStyle = { fill: "#fef9c3", stroke: "#fde047", text: "#713f12", fontSize: 14 }
+const NOTE_STYLE_LILAC: NodeStyle = { fill: "#f3e8ff", stroke: "#d8b4fe", text: "#581c87", fontSize: 14 }
+const NOTE_STYLE_MINT: NodeStyle = { fill: "#ecfdf5", stroke: "#a7f3d0", text: "#065f46", fontSize: 14 }
+const NOTE_STYLE_SKY: NodeStyle = { fill: "#f0f9ff", stroke: "#bae6fd", text: "#0369a1", fontSize: 14 }
+
 const FRAME_STYLE: NodeStyle = {
-  fill: "rgba(148,163,184,0.08)",
+  fill: "rgba(148,163,184,0.06)",
   stroke: "#94a3b8",
   text: "var(--foreground)",
   fontSize: 12,
 }
-const TASK_STYLE: NodeStyle = { fill: "#ffffff", stroke: "#cbd5e1", text: "#0f172a", fontSize: 13 }
+const TASK_STYLE: NodeStyle = { fill: "#ffffff", stroke: "#e2e8f0", text: "#0f172a", fontSize: 13 }
 
-function note(id: string, text: string, x: number, y: number, w = 200, h = 120): KanvasNode {
+function note(
+  id: string,
+  text: string,
+  x: number,
+  y: number,
+  w = 220,
+  h = 140,
+  style = NOTE_STYLE_BUTTER,
+  tag = "Note 📌",
+): KanvasNode {
   return {
     id,
     type: "note",
     position: { x, y },
     size: { width: w, height: h },
-    style: NOTE_STYLE,
-    data: { text },
+    style,
+    data: { text, tag },
   }
 }
 
@@ -98,8 +111,8 @@ function task(
   items: { id: string; text: string; done: boolean }[],
   x: number,
   y: number,
-  w = 240,
-  h = 180,
+  w = 260,
+  h = 190,
 ): KanvasNode {
   return {
     id,
@@ -117,55 +130,48 @@ export function seedNodesForTemplate(templateId: TemplateId): KanvasNode[] {
   switch (templateId) {
     case "brainstorm":
       return [
-        frame(nid(), "Ideas", -260, -180, 560, 360),
-        note(nid(), "What if users could...", -220, -120),
-        note(nid(), "We should try...", -20, -120),
-        note(nid(), "Crazy idea:", -220, 40),
-        note(nid(), "Keep this one?", 180, -40, 180, 100),
+        frame(nid(), "Ideas", -280, -200, 580, 380),
+        note(nid(), "Interactive visual learning cards", -240, -140, 220, 140, NOTE_STYLE_LILAC, "Idea 💡"),
+        note(nid(), "Instant contrast & pastel palettes", -240, 40, 220, 140, NOTE_STYLE_MINT, "Plan 🎯"),
+        note(nid(), "Offline-first IndexedDB persistence", 20, -140, 220, 140, NOTE_STYLE_BUTTER, "Note 📌"),
+        note(nid(), "Bento style dashboard & floating dock", 20, 40, 220, 140, NOTE_STYLE_SKY, "Urgent ⭐"),
       ]
     case "project":
       return [
-        frame(nid(), "Now", -300, -200, 280, 320),
-        frame(nid(), "Next", 20, -200, 280, 320),
-        frame(nid(), "Later", 340, -200, 280, 320),
+        frame(nid(), "Now", -320, -200, 300, 340),
+        frame(nid(), "Next", 20, -200, 300, 340),
+        frame(nid(), "Later", 360, -200, 300, 340),
         task(
           nid(),
-          "Now",
+          "Sprint Goals",
           [
-            { id: createId("task_item"), text: "Define scope", done: false },
-            { id: createId("task_item"), text: "First prototype", done: false },
+            { id: createId("task_item"), text: "Design Bento Dock", done: true },
+            { id: createId("task_item"), text: "Viewport & Zoom controls", done: true },
+            { id: createId("task_item"), text: "WCAG contrast verification", done: false },
           ],
-          -280,
-          -150,
-          240,
-          140,
+          -300,
+          -140,
+          260,
+          190,
         ),
       ]
     case "weekly":
       return [
-        frame(nid(), "Monday", -300, -180, 220, 200),
-        frame(nid(), "Wednesday", -60, -180, 220, 200),
-        frame(nid(), "Friday", 180, -180, 220, 200),
-        task(
-          nid(),
-          "This week",
-          [
-            { id: createId("task_item"), text: "Top priority", done: false },
-            { id: createId("task_item"), text: "Secondary", done: false },
-          ],
-          -280,
-          40,
-          220,
-          120,
-        ),
+        frame(nid(), "Monday", -320, -180, 250, 240),
+        frame(nid(), "Wednesday", -50, -180, 250, 240),
+        frame(nid(), "Friday", 220, -180, 250, 240),
+        note(nid(), "Weekly kick-off & goals", -300, -120, 210, 130, NOTE_STYLE_BUTTER, "Plan 🎯"),
+        note(nid(), "Mid-week prototype review", -30, -120, 210, 130, NOTE_STYLE_LILAC, "Task 📋"),
+        note(nid(), "Ship release & demo", 240, -120, 210, 130, NOTE_STYLE_MINT, "Urgent ⭐"),
       ]
     case "retro":
       return [
-        frame(nid(), "Went well", -300, -180, 260, 260),
-        frame(nid(), "To improve", 0, -180, 260, 260),
-        frame(nid(), "Action items", 300, -180, 260, 260),
-        note(nid(), "Fast releases", -270, -120, 200, 80),
-        note(nid(), "Flaky tests", 30, -120, 200, 80),
+        frame(nid(), "Went well 🌿", -320, -180, 280, 280),
+        frame(nid(), "To improve ⚠️", -20, -180, 280, 280),
+        frame(nid(), "Action items 🎯", 280, -180, 280, 280),
+        note(nid(), "Fast releases & bento docks", -290, -120, 220, 120, NOTE_STYLE_MINT, "Idea 💡"),
+        note(nid(), "Ensure all contrast is AA compliant", 10, -120, 220, 120, NOTE_STYLE_BUTTER, "Task 📋"),
+        note(nid(), "Write docs with visual guide", 310, -120, 220, 120, NOTE_STYLE_SKY, "Plan 🎯"),
       ]
     default:
       return []
