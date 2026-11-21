@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ArrowLeft, Compass, Download, Image as ImageIcon, RefreshCw } from "lucide-react"
+import { ArrowLeft, Compass, Download, Image as ImageIcon, Keyboard, RefreshCw, X } from "lucide-react"
 import { lazy, Suspense, useEffect, useRef, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { getBoardById, saveBoard } from "@/lib/db"
+import { useTheme } from "@/lib/theme"
 import { useToast } from "@/lib/toast"
 import { boardFileName, downloadBoard } from "@/lib/transfer"
 import { toPng } from "html-to-image"
@@ -22,8 +23,9 @@ type SaveState = "saved" | "saving" | "error"
 export function BoardPage() {
   const { id } = useParams<{ id: string }>()
   const { toast } = useToast()
-
+  const { theme } = useTheme()
   const [board, setBoard] = useState<Board | null>(null)
+  const [showShortcuts, setShowShortcuts] = useState(false)
   const [loadState, setLoadState] = useState<LoadState>(id ? "loading" : "missing")
   const [saveState, setSaveState] = useState<SaveState>("saved")
   const [reloadToken, setReloadToken] = useState(0)
@@ -166,8 +168,9 @@ export function BoardPage() {
     if (!node) return
 
     try {
+      const bgColor = theme === "dark" ? "#1a1e29" : "#f7f5ef"
       const dataUrl = await toPng(node, {
-        backgroundColor: "#f7f5ef",
+        backgroundColor: bgColor,
         pixelRatio: 2,
       })
       const link = document.createElement("a")
@@ -266,6 +269,15 @@ export function BoardPage() {
               <Button
                 variant="ghost"
                 size="icon"
+                onClick={() => setShowShortcuts(true)}
+                aria-label="Keyboard shortcuts"
+                title="Keyboard shortcuts"
+              >
+                <Keyboard className="size-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={handleExport}
                 aria-label="Export board as JSON"
                 title="Export board as JSON"
@@ -305,6 +317,53 @@ export function BoardPage() {
           </Suspense>
         ) : null}
       </main>
+
+      {/* Keyboard Shortcuts Modal */}
+      {showShortcuts ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-xs p-4">
+          <div className="relative w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-border/70 pb-3">
+              <div className="flex items-center gap-2">
+                <Keyboard className="size-4 text-primary" />
+                <h3 className="font-semibold text-sm">Keyboard Shortcuts</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowShortcuts(false)}
+                className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-2 text-xs">
+              {[
+                { key: "V", desc: "Select tool" },
+                { key: "H", desc: "Hand / Pan tool" },
+                { key: "P", desc: "Pen drawing tool" },
+                { key: "E", desc: "Eraser tool" },
+                { key: "N", desc: "Add Sticky Note" },
+                { key: "T", desc: "Add Text block" },
+                { key: "Ctrl + V", desc: "Paste copied nodes or clipboard screenshot" },
+                { key: "Ctrl + D", desc: "Duplicate selected nodes" },
+                { key: "Ctrl + A", desc: "Select all nodes" },
+                { key: "Ctrl + Z / Y", desc: "Undo / Redo" },
+                { key: "Del / Backspace", desc: "Delete selected nodes" },
+                { key: "+ / - / 0", desc: "Zoom in / Zoom out / Reset fit" },
+                { key: "Shift + Drag", desc: "Marquee multi-select" },
+                { key: "Drag from OS", desc: "Drop image files directly onto canvas" },
+              ].map((s) => (
+                <div key={s.key} className="flex items-center justify-between py-1">
+                  <span className="text-muted-foreground">{s.desc}</span>
+                  <kbd className="rounded-md border border-border bg-muted/60 px-2 py-0.5 font-mono text-[11px] font-semibold text-foreground">
+                    {s.key}
+                  </kbd>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

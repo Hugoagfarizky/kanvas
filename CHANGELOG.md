@@ -9,29 +9,18 @@ aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- Vite + React 19 + TypeScript + Tailwind CSS v4 foundation.
-- Light and dark theme with a persisted preference and no flash on load.
-- Dashboard with local board list, create, open and two-step delete.
-- Board search, duplicate, JSON import/export and undoable delete.
-- Toast system, error boundary and load/save error states for local storage.
-- Four starting templates: Brainstorm, Project plan, Weekly plan, Retrospective.
-- Board page shell with inline title editing and debounced autosave to IndexedDB.
-- M3 selection: shift-click, marquee (Shift+drag), select-all, group move.
-- Align and distribute toolbar for multi-selection.
-- Copy, paste, duplicate and delete with keyboard shortcuts.
-- Undo/redo with a 50-step history.
-- M4 connectors and ink: labeled connectors via node handles (double-click to label).
-- Pen, highlighter and eraser with perfect-freehand strokes.
-- Geometry-based eraser with stroke splitting.
-- Board schema (`schemaVersion: 1`) for nodes, edges, strokes and viewport.
-- PWA manifest, self-hosted fonts and an offline service worker.
-- Playwright smoke tests in CI (persist, theme, undo, export/import, offline).
-- English UI with hash routing for static hosting.
-- CI workflow: lint, typecheck, unit tests, end-to-end tests and production build.
-- GitHub Pages deployment workflow.
-- README, Indonesian README, roadmap, contributing guide, code of conduct, security policy,
-  issue forms, pull request template and Dependabot configuration.
+- Device image upload via file dialog, global canvas drag-and-drop, and clipboard paste (Ctrl+V).
+- Image fit toggle (contain/cover) and quick replace/clear controls on image hover.
+- WCAG 2.1 relative luminance color contrast utilities in `src/lib/color.ts` ensuring text readability in both light and dark modes.
+- Unified floating dock toolbar with Lucide icons, tooltips, and keyboard shortcuts.
+- Secondary drawing options toolbar for pen ink colors, highlighter palettes, and stroke sizes.
+- Keyboard shortcuts modal dialog (`?` / header button).
+- Visual alignment and distribution toolbar with graphic icons for multi-selection.
+- Theme-aware PNG board export.
+- Quick preset color swatches with automatic text contrast in the node style inspector.
 
-### Notes
+### Changed
 
-- The canvas engine is not wired up yet; see [ROADMAP.md](ROADMAP.md).
+- Repositioned the node style inspector away from the MiniMap.
+- Fixed dark mode text readability across Text, Frame, and Task nodes.
+- Enhanced React Flow connector labels and edge styling for light and dark themes.

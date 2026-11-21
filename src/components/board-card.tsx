@@ -160,11 +160,11 @@ function BoardThumbnail({ board }: { board: Board }) {
           key={stroke.id}
           points={stroke.points.map((point) => `${point[0]},${point[1]}`).join(" ")}
           fill="none"
-          stroke={stroke.color}
-          strokeWidth={stroke.size}
+          stroke={stroke.color === "#1f2937" ? "var(--foreground)" : stroke.color}
+          strokeWidth={Math.max(2, stroke.size)}
           strokeLinecap="round"
           strokeLinejoin="round"
-          opacity={stroke.tool === "highlighter" ? 0.4 : 1}
+          opacity={stroke.tool === "highlighter" ? 0.45 : 0.85}
         />
       ))}
       {board.nodes.map((node) => (
@@ -175,8 +175,8 @@ function BoardThumbnail({ board }: { board: Board }) {
           width={node.size.width}
           height={node.size.height}
           rx={6}
-          fill={node.style.fill}
-          stroke={node.style.stroke}
+          fill={node.style.fill === "transparent" ? "rgba(148,163,184,0.12)" : node.style.fill}
+          stroke={node.style.stroke || "var(--border)"}
           strokeWidth={1.5}
         />
       ))}

@@ -61,14 +61,14 @@ export function getTemplate(id: TemplateId): BoardTemplate | undefined {
   return TEMPLATES.find((template) => template.id === id)
 }
 
-const NOTE_STYLE: NodeStyle = { fill: "#fef3c7", stroke: "#f59e0b", text: "#1f2937", fontSize: 14 }
+const NOTE_STYLE: NodeStyle = { fill: "#fef08a", stroke: "#eab308", text: "#1e293b", fontSize: 14 }
 const FRAME_STYLE: NodeStyle = {
   fill: "rgba(148,163,184,0.08)",
   stroke: "#94a3b8",
-  text: "#475569",
+  text: "var(--foreground)",
   fontSize: 12,
 }
-const TASK_STYLE: NodeStyle = { fill: "#ffffff", stroke: "#94a3b8", text: "#1f2937", fontSize: 13 }
+const TASK_STYLE: NodeStyle = { fill: "#ffffff", stroke: "#cbd5e1", text: "#0f172a", fontSize: 13 }
 
 function note(id: string, text: string, x: number, y: number, w = 200, h = 120): KanvasNode {
   return {
