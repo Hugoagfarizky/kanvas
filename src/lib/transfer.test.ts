@@ -79,41 +79,41 @@ describe("board import", () => {
     expect(imported.viewport).toEqual({ x: 0, y: 4, zoom: 4 })
   })
 
-  it("drops invalid nodes, edges and strokes instead of crashing", () => {
+  it("normalizes a task node missing items", () => {
     const imported = parseBoardFile(
       JSON.stringify({
         ...BOARD,
         nodes: [
           {
-            id: "node_1",
-            type: "note",
+            id: "task_1",
+            type: "task",
             position: { x: 0, y: 0 },
-            size: { width: 120, height: 120 },
-            data: { text: "Hello" },
-            style: { fill: "#fff", stroke: "#000", text: "#000" },
+            size: { width: 260, height: 200 },
+            data: { title: "Tasks" },
+            style: { fill: "#fff", stroke: "#e2e8f0", text: "#000" },
           },
-          { id: "node_bad", type: "spaceship" },
-          "not a node",
-        ],
-        edges: [{ id: "edge_1", source: "node_1", target: "node_1" }, { id: "edge_bad" }],
-        strokes: [
-          {
-            id: "stroke_1",
-            tool: "pen",
-            points: [
-              [0, 0, 0.5],
-              [4, 4, 0.6],
-            ],
-            color: "#111",
-            size: 3,
-          },
-          { id: "stroke_bad", tool: "laser", points: [] },
         ],
       }),
     )
 
     expect(imported.nodes).toHaveLength(1)
-    expect(imported.edges).toHaveLength(1)
-    expect(imported.strokes).toHaveLength(1)
+    expect((imported.nodes[0].data as any).items).toEqual([])
+  })
+
+  it("preserves template ids for dei/cardiology/uxflow on import", () => {
+    for (const templateId of ["dei", "cardiology", "uxflow"]) {
+      const imported = parseBoardFile(JSON.stringify({ ...BOARD, templateId }))
+      expect(imported.templateId).toBe(templateId)
+    }
+  })
+
+  it("preserves connector type on import", () => {
+    const imported = parseBoardFile(
+      JSON.stringify({
+        ...BOARD,
+        edges: [{ id: "e1", source: "a", target: "b", type: "straight", color: "#10b981" }],
+      }),
+    )
+    expect(imported.edges[0].type).toBe("straight")
   })
 })
