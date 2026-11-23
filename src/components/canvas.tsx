@@ -306,7 +306,10 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
     (board.edges ?? []).map(toFlowEdge),
   )
   const [strokes, setStrokes] = useState<any[]>(() => board.strokes ?? [])
-  const [historyTick, setHistoryTick] = useState(0)
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
+  const [commandQuery, setCommandQuery] = useState("")
+  const [canUndo, setCanUndo] = useState(false)
+  const [canRedo, setCanRedo] = useState(false)
   const [pendingTemplate, setPendingTemplate] = useState<"dei" | "cardiology" | "uxflow" | "blank" | null>(null)
   const [connectorLabel, setConnectorLabel] = useState<{ edgeId: string; value: string } | null>(null)
 const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "blank")
@@ -469,6 +472,21 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
 
   const selectedNodes = nodes.filter((node) => node.selected)
   const selectedEdges = edges.filter((edge) => edge.selected)
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if ((event.ctrlKey || event.metaKey) && (event.key === "k" || event.key === "K")) {
+        event.preventDefault()
+        setCommandPaletteOpen((prev) => !prev)
+        setCommandQuery("")
+      }
+      if (event.key === "Escape" && commandPaletteOpen) {
+        setCommandPaletteOpen(false)
+      }
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [commandPaletteOpen])
+
   const isEmpty = nodes.length === 0 && edges.length === 0 && strokes.length === 0
 
   function cloneStrokes(items: any[]) {
@@ -486,7 +504,8 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
     })
     if (history.current.past.length > 50) history.current.past.shift()
     history.current.future = []
-    setHistoryTick((t) => t + 1)
+    setCanUndo(true)
+    setCanRedo(false)
   }
 
   function undo() {
@@ -500,7 +519,8 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
     setNodes(prev.nodes.map(cloneNode))
     setEdges(prev.edges.map(cloneEdge))
     setStrokes(cloneStrokes(prev.strokes))
-    setHistoryTick((t) => t + 1)
+    setCanUndo(history.current.past.length > 0)
+    setCanRedo(history.current.future.length > 0)
   }
 
   function redo() {
@@ -514,7 +534,8 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
     setNodes(next.nodes.map(cloneNode))
     setEdges(next.edges.map(cloneEdge))
     setStrokes(cloneStrokes(next.strokes))
-    setHistoryTick((t) => t + 1)
+    setCanUndo(history.current.past.length > 0)
+    setCanRedo(history.current.future.length > 0)
   }
 
   useEffect(() => {
@@ -1521,11 +1542,10 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
             <button
               type="button"
               onClick={() => undo()}
-              disabled={history.current.past.length === 0}
+              disabled={!canUndo}
               className="flex size-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:scale-110 active:scale-95 disabled:opacity-40"
               title="Undo (Ctrl+Z)"
               aria-label="Undo"
-              data-history-tick={historyTick}
             >
               <Undo2 className="size-4" />
             </button>
@@ -1533,7 +1553,7 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
             <button
               type="button"
               onClick={() => redo()}
-              disabled={history.current.future.length === 0}
+              disabled={!canRedo}
               className="flex size-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:scale-110 active:scale-95 disabled:opacity-40"
               title="Redo (Ctrl+Y)"
               aria-label="Redo"
@@ -2783,6 +2803,44 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
                   <button type="button" onClick={() => setPendingTemplate(null)} className="rounded-xl px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent">Cancel</button>
                   <button type="button" onClick={() => { const kind = pendingTemplate; setPendingTemplate(null); if (kind) applyTemplate(kind) }} className="rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">Replace</button>
                 </div>
+              </div>
+            </div>
+          ) : null}
+          {commandPaletteOpen ? (
+            <div className="fixed inset-0 z-50 flex items-start justify-center bg-background/60 backdrop-blur-xs p-4 pt-24" onKeyDown={(e) => { if (e.key === "Escape") setCommandPaletteOpen(false) }}>
+              <div className="w-full max-w-md rounded-3xl border border-border bg-card p-4 shadow-2xl">
+                <input
+                  autoFocus
+                  value={commandQuery}
+                  onChange={(e) => setCommandQuery(e.target.value)}
+                  placeholder="Type a command..."
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                />
+                <ul className="mt-3 max-h-64 overflow-y-auto">
+                  {[ 
+                    { id: "add-note", label: "Add sticky note", run: () => addNode("note") },
+                    { id: "add-text", label: "Add text block", run: () => addNode("text") },
+                    { id: "add-task", label: "Add task checklist", run: () => addNode("task") },
+                    { id: "tool-pen", label: "Switch to pen tool", run: () => setTool("pen") },
+                    { id: "tool-select", label: "Switch to select tool", run: () => setTool("select") },
+                    { id: "undo", label: "Undo", run: () => undo() },
+                    { id: "redo", label: "Redo", run: () => redo() },
+                    { id: "toggle-layers", label: "Toggle layers panel", run: () => setShowLayers((v) => !v) },
+                    { id: "shortcuts", label: "Show keyboard shortcuts", run: () => setShowShortcutsModal(true) },
+                    { id: "template-dei", label: "Load Dei Learning Plan template", run: () => requestTemplate("dei") },
+                    { id: "template-blank", label: "Reset to blank canvas", run: () => requestTemplate("blank") },
+                  ].filter((c) => c.label.toLowerCase().includes(commandQuery.toLowerCase())).map((c) => (
+                    <li key={c.id}>
+                      <button
+                        type="button"
+                        onClick={() => { c.run(); setCommandPaletteOpen(false); setCommandQuery("") }}
+                        className="w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-accent"
+                      >
+                        {c.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           ) : null}
