@@ -306,6 +306,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
     (board.edges ?? []).map(toFlowEdge),
   )
   const [strokes, setStrokes] = useState<any[]>(() => board.strokes ?? [])
+  const [pendingTemplate, setPendingTemplate] = useState<"dei" | "cardiology" | "uxflow" | "blank" | null>(null)
   const [connectorLabel, setConnectorLabel] = useState<{ edgeId: string; value: string } | null>(null)
 const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "blank")
   const [tool, setTool] = useState<string>("select")
@@ -387,10 +388,15 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
   // (removed unused isCardio/isUX flags)
 
   // Switch between templates (Dei, Cardiology, UX Flow, Blank)
-  function loadTemplate(kind: "dei" | "cardiology" | "uxflow" | "blank") {
+  function requestTemplate(kind: "dei" | "cardiology" | "uxflow" | "blank") {
     if (nodes.length > 0 || edges.length > 0 || strokes.length > 0) {
-      if (!window.confirm("Replace the current canvas content with this template?")) return
+      setPendingTemplate(kind)
+      return
     }
+    applyTemplate(kind)
+  }
+
+  function applyTemplate(kind: "dei" | "cardiology" | "uxflow" | "blank") {
     pushHistory()
     if (kind === "dei") {
       const dei = seedDeiLearningPlan()
@@ -422,7 +428,7 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
 
   // Quick reset to Dei Learning Plan board demo
   function resetToDeiTemplate() {
-    loadTemplate("dei")
+    requestTemplate("dei")
   }
 
   // Drawing tool customization
@@ -1699,7 +1705,7 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
                   <button
                     type="button"
                     onClick={() => {
-                      loadTemplate("cardiology")
+                      requestTemplate("cardiology")
                     }}
                     className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-xs font-semibold text-rose-300 hover:bg-white/10 transition"
                   >
@@ -1709,7 +1715,7 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
                   <button
                     type="button"
                     onClick={() => {
-                      loadTemplate("uxflow")
+                      requestTemplate("uxflow")
                     }}
                     className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-xs font-semibold text-sky-300 hover:bg-white/10 transition"
                   >
@@ -1785,7 +1791,7 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
                   {/* 1. Dei Learning Plan (Ref 3) */}
                   <button
                     type="button"
-                    onClick={() => loadTemplate("dei")}
+                    onClick={() => requestTemplate("dei")}
                     className="flex flex-col items-start gap-1 rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-3.5 text-left transition hover:border-emerald-400 hover:bg-emerald-950/40 active:scale-95"
                   >
                     <GraduationCap className="size-5 text-emerald-400" />
@@ -1798,7 +1804,7 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
                   {/* 2. Cardiology Dynamics (Ref 1) */}
                   <button
                     type="button"
-                    onClick={() => loadTemplate("cardiology")}
+                    onClick={() => requestTemplate("cardiology")}
                     className="flex flex-col items-start gap-1 rounded-2xl border border-rose-500/30 bg-rose-950/20 p-3.5 text-left transition hover:border-rose-400 hover:bg-rose-950/40 active:scale-95"
                   >
                     <Activity className="size-5 text-rose-400" />
@@ -1811,7 +1817,7 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
                   {/* 3. UX Architecture Flow (Ref 2) */}
                   <button
                     type="button"
-                    onClick={() => loadTemplate("uxflow")}
+                    onClick={() => requestTemplate("uxflow")}
                     className="flex flex-col items-start gap-1 rounded-2xl border border-sky-500/30 bg-sky-950/20 p-3.5 text-left transition hover:border-sky-400 hover:bg-sky-950/40 active:scale-95"
                   >
                     <Compass className="size-5 text-sky-400" />
@@ -1824,7 +1830,7 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
                   {/* 4. Blank Canvas */}
                   <button
                     type="button"
-                    onClick={() => loadTemplate("blank")}
+                    onClick={() => requestTemplate("blank")}
                     className="flex flex-col items-start gap-1 rounded-2xl border border-white/10 bg-white/5 p-3.5 text-left transition hover:border-white/20 hover:bg-white/10 active:scale-95"
                   >
                     <Square className="size-5 text-white/80" />
@@ -2744,6 +2750,18 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
                 <div className="mt-4 flex justify-end gap-2">
                   <button type="button" onClick={() => setConnectorLabel(null)} className="rounded-xl px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent">Cancel</button>
                   <button type="button" onClick={() => { pushHistory(); setEdges((current) => current.map((item) => item.id === connectorLabel.edgeId ? { ...item, label: connectorLabel.value } : item)); setConnectorLabel(null) }} className="rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">Save</button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+          {pendingTemplate ? (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-xs p-4" onKeyDown={(e) => { if (e.key === "Escape") setPendingTemplate(null) }}>
+              <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-6 shadow-2xl">
+                <h3 className="font-semibold text-sm">Replace canvas content?</h3>
+                <p className="mt-2 text-xs text-muted-foreground">This will replace all nodes, edges, and strokes on the canvas.</p>
+                <div className="mt-4 flex justify-end gap-2">
+                  <button type="button" onClick={() => setPendingTemplate(null)} className="rounded-xl px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent">Cancel</button>
+                  <button type="button" onClick={() => { const kind = pendingTemplate; setPendingTemplate(null); if (kind) applyTemplate(kind) }} className="rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">Replace</button>
                 </div>
               </div>
             </div>
