@@ -352,7 +352,7 @@ export function BoardPage() {
         </div>
       </header>
 
-      <main className="relative min-h-0 flex-1 overflow-hidden">
+      <main className="relative min-h-0 flex-1 overflow-hidden flex items-center justify-center">
         {loadState === "loading" ? (
           <p className="text-sm text-muted-foreground">Opening board…</p>
         ) : null}
