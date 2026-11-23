@@ -47,6 +47,8 @@ import {
   Pencil,
   Plus,
   RotateCcw,
+  Undo2,
+  Redo2,
   Search,
   Sparkles,
   Square,
@@ -1492,7 +1494,27 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
 
           {/* Bottom Sculpted Dark Dock matching Dei reference */}
           <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex max-w-[calc(100vw-1.5rem)] items-center gap-2 overflow-x-auto rounded-full border border-white/10 bg-[#0f1115] px-4 py-2.5 text-white shadow-2xl backdrop-blur-xl ring-1 ring-black/40 select-none">
-            {/* Button 1: T (Lilac Circle - Text) */}
+            {/* Undo */}
+            <button
+              type="button"
+              onClick={() => undo()}
+              className="flex size-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:scale-110 active:scale-95"
+              title="Undo (Ctrl+Z)"
+              aria-label="Undo"
+            >
+              <Undo2 className="size-4" />
+            </button>
+            {/* Redo */}
+            <button
+              type="button"
+              onClick={() => redo()}
+              className="flex size-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:scale-110 active:scale-95"
+              title="Redo (Ctrl+Y)"
+              aria-label="Redo"
+            >
+              <Redo2 className="size-4" />
+            </button>
+            <span className="h-6 w-px bg-white/15" />
             <button
               type="button"
               onClick={() => addNode("text")}
