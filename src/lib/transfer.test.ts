@@ -97,7 +97,7 @@ describe("board import", () => {
     )
 
     expect(imported.nodes).toHaveLength(1)
-    expect((imported.nodes[0].data as any).items).toEqual([])
+    expect((imported.nodes[0].data as { items: unknown }).items).toEqual([])
   })
 
   it("preserves template ids for dei/cardiology/uxflow on import", () => {

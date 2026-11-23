@@ -6,8 +6,8 @@ import type { Board } from "@/types/board"
 describe("sortBoards", () => {
   it("sorts by updatedAt descending", () => {
     const boards: Board[] = [
-      { id: "a", title: "A", templateId: "blank", createdAt: 1, updatedAt: 10, viewport: { x: 0, y: 0, zoom: 1 }, nodes: [], edges: [], strokes: [] },
-      { id: "b", title: "B", templateId: "blank", createdAt: 2, updatedAt: 20, viewport: { x: 0, y: 0, zoom: 1 }, nodes: [], edges: [], strokes: [] },
+      { id: "a", title: "A", templateId: "blank", schemaVersion: 1, createdAt: 1, updatedAt: 10, viewport: { x: 0, y: 0, zoom: 1 }, nodes: [], edges: [], strokes: [] },
+      { id: "b", title: "B", templateId: "blank", schemaVersion: 1, createdAt: 2, updatedAt: 20, viewport: { x: 0, y: 0, zoom: 1 }, nodes: [], edges: [], strokes: [] },
     ]
     expect(sortBoards(boards).map((b) => b.id)).toEqual(["b", "a"])
   })

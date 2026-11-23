@@ -1347,6 +1347,7 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
                 showLayers ? "bg-white/20 text-white shadow-xs" : "text-white/70",
               )}
               title="Toggle Layers"
+              aria-label="Toggle layers panel"
             >
               <Menu className="size-4.5" />
             </button>
@@ -1360,6 +1361,7 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
                 showTemplateModal ? "bg-white/20 text-white shadow-xs" : "text-white/70",
               )}
               title="Template & View Switcher"
+              aria-label="Template and view switcher"
             >
               <Grid className="size-4.5" />
             </button>
@@ -1374,7 +1376,8 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
                 setShowShortcutsModal(true)
               }}
               className="flex flex-col items-center gap-0.5 py-1 text-white transition hover:scale-110 active:scale-95"
-              title="Activity & Notifications (29)"
+              title="Activity & Notifications"
+              aria-label="Activity and notifications"
             >
               <Bell className="size-4 text-amber-300" />
             </button>
@@ -1385,6 +1388,7 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
               onClick={() => reactFlow.zoomIn({ duration: 150 })}
               className="flex size-8 items-center justify-center rounded-full text-white/70 transition hover:bg-white/15 hover:text-white hover:scale-105 active:scale-95"
               title="Zoom In (+)"
+              aria-label="Zoom in"
             >
               <Plus className="size-4.5" />
             </button>
@@ -1395,6 +1399,7 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
               onClick={() => reactFlow.zoomOut({ duration: 150 })}
               className="flex size-8 items-center justify-center rounded-full text-white/70 transition hover:bg-white/15 hover:text-white hover:scale-105 active:scale-95"
               title="Zoom Out (-)"
+              aria-label="Zoom out"
             >
               <Minus className="size-4.5" />
             </button>
