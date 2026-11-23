@@ -1566,6 +1566,7 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
               onClick={() => addNode("text")}
               className="flex size-9 items-center justify-center rounded-full bg-[#d8b4fe] font-bold text-sm text-[#4a044e] shadow-md transition hover:scale-110 active:scale-95"
               title="Add Text Block (T)"
+              aria-label="Add text block"
             >
               T
             </button>
@@ -1588,6 +1589,7 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
               }
               className="flex size-9 items-center justify-center rounded-full bg-[#7dd3fc] font-bold text-sm text-[#0c4a6e] shadow-md transition hover:scale-110 active:scale-95"
               title="Add Roadmap Step (A)"
+              aria-label="Add roadmap step"
             >
               A
             </button>
@@ -1611,6 +1613,7 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
               }
               className="flex size-9 items-center justify-center rounded-full bg-[#f472b6] font-bold text-sm text-[#831843] shadow-md transition hover:scale-110 active:scale-95"
               title="Add Media / Audio Course"
+              aria-label="Add media card"
             >
               <ImageIcon className="size-4" />
             </button>
@@ -1633,6 +1636,7 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
               }
               className="flex size-9 items-center justify-center rounded-full bg-[#fcd34d] font-bold text-sm text-[#78350f] shadow-md transition hover:scale-110 active:scale-95"
               title="Add Event / Schedule Card"
+              aria-label="Add event card"
             >
               <FileText className="size-4" />
             </button>
@@ -1646,6 +1650,7 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
                 tool === "connect" && "ring-2 ring-white scale-110 shadow-lg",
               )}
               title="Green Dotted Connector Tool"
+              aria-label="Connector tool"
             >
               <Link2 className="size-4" />
             </button>
@@ -1662,6 +1667,7 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
               }
               className="flex size-9 items-center justify-center rounded-full bg-[#6ee7b7] font-bold text-sm text-[#064e3b] shadow-md transition hover:scale-110 active:scale-95"
               title="Add Milestone / Shape"
+              aria-label="Add shape"
             >
               <Target className="size-4" />
             </button>
@@ -1676,6 +1682,7 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
                   showQuickAdd && "bg-white/25 ring-1 ring-white/30",
                 )}
                 title="Quick Add Menu"
+              aria-label="Quick add menu"
               >
                 <Plus className="size-5" />
               </button>
