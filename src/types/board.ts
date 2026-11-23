@@ -88,7 +88,7 @@ export type KanvasNode =
   | NodeBase<"frame", FrameData>
   | NodeBase<"image", ImageData>
 
-export type EdgeType = "bezier" | "straight" | "step"
+export type EdgeType = "bezier" | "straight" | "step" | "smoothstep"
 
 export type KanvasEdge = {
   id: string

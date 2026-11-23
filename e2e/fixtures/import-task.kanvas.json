@@ -1,0 +1,26 @@
+{
+  "app": "kanvas",
+  "fileVersion": 1,
+  "exportedAt": "2026-01-01T00:00:00.000Z",
+  "board": {
+    "schemaVersion": 1,
+    "id": "board_original",
+    "title": "Import test",
+    "templateId": "blank",
+    "createdAt": 1700000000000,
+    "updatedAt": 1700000100000,
+    "viewport": { "x": 0, "y": 0, "zoom": 1 },
+    "nodes": [
+      {
+        "id": "t1",
+        "type": "task",
+        "position": { "x": 10, "y": 10 },
+        "size": { "width": 260, "height": 200 },
+        "style": { "fill": "#ffffff", "stroke": "#e2e8f0", "text": "#0f172a", "fontSize": 13 },
+        "data": { "title": "Tasks" }
+      }
+    ],
+    "edges": [],
+    "strokes": []
+  }
+}

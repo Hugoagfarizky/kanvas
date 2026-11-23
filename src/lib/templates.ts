@@ -97,10 +97,6 @@ export const TEMPLATES: BoardTemplate[] = [
   },
 ]
 
-export function getTemplate(id: TemplateId): BoardTemplate | undefined {
-  return TEMPLATES.find((template) => template.id === id)
-}
-
 const NOTE_STYLE_BUTTER: NodeStyle = {
   fill: "#fef9c3",
   stroke: "#fde047",

@@ -1,25 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   ArrowLeft,
-  ChevronDown,
-  Clock,
   Compass,
   Download,
-  GraduationCap,
   Image as ImageIcon,
   Keyboard,
-  Mail,
   RefreshCw,
-  Sliders,
-  Users,
   X,
 } from "lucide-react"
-import { lazy, Suspense, useEffect, useRef, useState } from "react"
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button, buttonVariants } from "@/components/ui/button"
-import { getBoardById, saveBoard } from "@/lib/db"
+import { getBoardById, saveBoard, subscribeToBoardChanges } from "@/lib/db"
 import { useTheme } from "@/lib/theme"
 import { useToast } from "@/lib/toast"
 import { boardFileName, downloadBoard } from "@/lib/transfer"
@@ -40,8 +34,6 @@ export function BoardPage() {
   const { theme } = useTheme()
   const [board, setBoard] = useState<Board | null>(null)
   const [showShortcuts, setShowShortcuts] = useState(false)
-  const [showProfileMenu, setShowProfileMenu] = useState(false)
-  const [activeNavTab, setActiveNavTab] = useState<"plan" | "team" | "timeline" | "messages" | "settings">("plan")
   const [loadState, setLoadState] = useState<LoadState>(id ? "loading" : "missing")
   const [saveState, setSaveState] = useState<SaveState>("saved")
   const [reloadToken, setReloadToken] = useState(0)
@@ -50,14 +42,71 @@ export function BoardPage() {
   const boardRef = useRef<Board | null>(null)
   const saveSeq = useRef(0)
 
-  useEffect(() => {
-    boardRef.current = board
-  }, [board])
+  const applyBoard = useCallback((next: Board) => {
+    boardRef.current = next
+    setBoard(next)
+  }, [])
+
+  const persist = useCallback(
+    (next: Board, touchUpdatedAt = true) => {
+      const seq = saveSeq.current + 1
+      saveSeq.current = seq
+      setSaveState("saving")
+
+      const toSave = touchUpdatedAt ? { ...next, updatedAt: Date.now() } : next
+      if (touchUpdatedAt) applyBoard(toSave)
+
+      void saveBoard(toSave)
+        .then(() => {
+          if (seq === saveSeq.current) setSaveState("saved")
+        })
+        .catch(() => {
+          if (seq === saveSeq.current) setSaveState("error")
+        })
+    },
+    [applyBoard],
+  )
+
+  const handleViewportChange = useCallback(
+    (viewport: Viewport) => {
+      const current = boardRef.current
+      if (!current) return
+
+      const next = { ...current, viewport }
+      applyBoard(next)
+      persist(next, false)
+    },
+    [applyBoard, persist],
+  )
+
+  const handlePersist = useCallback(
+    (patch: { nodes: any[]; edges: any[]; strokes: any[]; templateId?: any }) => {
+      const current = boardRef.current
+      if (!current) return
+
+      const next = {
+        ...current,
+        nodes: patch.nodes,
+        edges: patch.edges,
+        strokes: patch.strokes,
+        ...(patch.templateId ? { templateId: patch.templateId } : {}),
+      }
+      persist(next, true)
+    },
+    [persist],
+  )
 
   useEffect(() => {
-    if (!board) return
-    document.title = `${board.title.trim() || "Untitled board"} · Kanvas`
-  }, [board])
+    if (!id) return
+    const unsubscribe = subscribeToBoardChanges((message) => {
+      if (message.type === "board-saved" && message.id === id) {
+        getBoardById(id!).then((found) => {
+          if (found) applyBoard(found)
+        })
+      }
+    })
+    return () => unsubscribe()
+  }, [id, applyBoard])
 
   useEffect(() => {
     let active = true
@@ -71,7 +120,7 @@ export function BoardPage() {
           setLoadState("missing")
           return
         }
-        setBoard(found)
+        applyBoard(found)
         setLoadState("ready")
       })
       .catch(() => {
@@ -81,7 +130,7 @@ export function BoardPage() {
     return () => {
       active = false
     }
-  }, [id, reloadToken])
+  }, [id, reloadToken, applyBoard])
 
   useEffect(() => {
     return () => {
@@ -96,44 +145,12 @@ export function BoardPage() {
     }
   }, [])
 
-  function persist(next: Board, touchUpdatedAt = true) {
-    const seq = saveSeq.current + 1
-    saveSeq.current = seq
-    setSaveState("saving")
-
-    const toSave = touchUpdatedAt ? { ...next, updatedAt: Date.now() } : next
-    if (touchUpdatedAt) setBoard(toSave)
-
-    void saveBoard(toSave)
-      .then(() => {
-        if (seq === saveSeq.current) setSaveState("saved")
-      })
-      .catch(() => {
-        if (seq === saveSeq.current) setSaveState("error")
-      })
-  }
-
-  function handleViewportChange(viewport: Viewport) {
-    if (!board) return
-
-    const next = { ...board, viewport }
-    setBoard(next)
-    persist(next, false)
-  }
-
-  function handlePersist(patch: { nodes: any[]; edges: any[]; strokes: any[] }) {
-    if (!board) return
-
-    const next = { ...board, nodes: patch.nodes, edges: patch.edges, strokes: patch.strokes }
-    setBoard(next)
-    persist(next, true)
-  }
-
   function handleTitleChange(value: string) {
-    if (!board) return
+    const current = boardRef.current
+    if (!current) return
 
-    const next = { ...board, title: value }
-    setBoard(next)
+    const next = { ...current, title: value }
+    applyBoard(next)
 
     if (saveTimer.current) window.clearTimeout(saveTimer.current)
     saveTimer.current = window.setTimeout(() => {
@@ -143,7 +160,8 @@ export function BoardPage() {
   }
 
   function flushTitle() {
-    if (!board) return
+    const current = boardRef.current
+    if (!current) return
 
     const hadPendingSave = saveTimer.current !== null
     if (saveTimer.current) {
@@ -151,10 +169,10 @@ export function BoardPage() {
       saveTimer.current = null
     }
 
-    const next = { ...board, title: board.title.trim() || "Untitled board" }
-    if (!hadPendingSave && next.title === board.title) return
+    const next = { ...current, title: current.title.trim() || "Untitled board" }
+    if (!hadPendingSave && next.title === current.title) return
 
-    setBoard(next)
+    applyBoard(next)
     persist(next)
   }
 
@@ -235,7 +253,7 @@ export function BoardPage() {
           </Link>
           <span className="hidden h-5 w-px shrink-0 bg-white/20 sm:block" />
 
-          <span className="font-sans text-xl font-black tracking-tight text-white">Dei</span>
+          <span className="font-sans text-xl font-black tracking-tight text-white">Kanvas</span>
 
           {loadState === "ready" && board ? (
             <div className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 shadow-xs backdrop-blur-xs transition focus-within:border-white/40 focus-within:bg-white/10">
@@ -259,74 +277,6 @@ export function BoardPage() {
           )}
         </div>
 
-        {/* Center: Dei Navigation Tabs */}
-        <div className="hidden md:flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1 shadow-inner backdrop-blur-md">
-          <button
-            type="button"
-            onClick={() => setActiveNavTab("plan")}
-            className={cn(
-              "flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-semibold transition",
-              activeNavTab === "plan"
-                ? "bg-white/15 text-white ring-1 ring-white/20 shadow-xs"
-                : "text-white/60 hover:text-white hover:bg-white/10",
-            )}
-          >
-            <GraduationCap className="size-3.5" />
-            <span>Learning Plan</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveNavTab("team")}
-            className={cn(
-              "flex size-7.5 items-center justify-center rounded-full transition",
-              activeNavTab === "team"
-                ? "bg-white/15 text-white shadow-xs"
-                : "text-white/60 hover:text-white hover:bg-white/10",
-            )}
-            title="Team & Collaborators"
-          >
-            <Users className="size-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveNavTab("timeline")}
-            className={cn(
-              "flex size-7.5 items-center justify-center rounded-full transition",
-              activeNavTab === "timeline"
-                ? "bg-white/15 text-white shadow-xs"
-                : "text-white/60 hover:text-white hover:bg-white/10",
-            )}
-            title="Timeline & Schedule"
-          >
-            <Clock className="size-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveNavTab("messages")}
-            className={cn(
-              "flex size-7.5 items-center justify-center rounded-full transition",
-              activeNavTab === "messages"
-                ? "bg-white/15 text-white shadow-xs"
-                : "text-white/60 hover:text-white hover:bg-white/10",
-            )}
-            title="Messages"
-          >
-            <Mail className="size-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveNavTab("settings")}
-            className={cn(
-              "flex size-7.5 items-center justify-center rounded-full transition",
-              activeNavTab === "settings"
-                ? "bg-white/15 text-white shadow-xs"
-                : "text-white/60 hover:text-white hover:bg-white/10",
-            )}
-            title="Settings & Config"
-          >
-            <Sliders className="size-3.5" />
-          </button>
-        </div>
 
         {/* Right: Save Status & Ellington Thom Profile Pill */}
         <div className="flex shrink-0 items-center gap-2">
@@ -358,71 +308,7 @@ export function BoardPage() {
             </span>
           ) : null}
 
-          {/* User Profile Pill matching Dei reference */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setShowProfileMenu((prev) => !prev)}
-              className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-2 py-1 transition hover:bg-white/15 active:scale-95 shadow-xs"
-              title="User profile & board settings"
-            >
-              <div className="flex size-7 items-center justify-center rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 font-bold text-xs text-white ring-2 ring-white/20">
-                ET
-              </div>
-              <div className="hidden sm:flex flex-col text-left leading-tight pr-1">
-                <span className="text-xs font-bold text-white">Ellington Thom</span>
-                <span className="text-[10px] text-white/60">annette@gmail.com</span>
-              </div>
-              <ChevronDown className="size-3.5 text-white/60" />
-            </button>
-
-            {/* Profile Dropdown */}
-            {showProfileMenu ? (
-              <div className="absolute right-0 top-12 z-50 min-w-56 rounded-2xl border border-white/15 bg-[#161922] p-2 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-100 text-white">
-                <div className="border-b border-white/10 px-3 py-2 sm:hidden">
-                  <p className="text-xs font-bold text-white">Ellington Thom</p>
-                  <p className="text-[10px] text-white/60">annette@gmail.com</p>
-                </div>
-                <div className="p-1 space-y-1 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowShortcuts(true)
-                      setShowProfileMenu(false)
-                    }}
-                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-white/80 hover:bg-white/10 hover:text-white transition"
-                  >
-                    <Keyboard className="size-3.5" />
-                    <span>Keyboard shortcuts</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleExport()
-                      setShowProfileMenu(false)
-                    }}
-                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-white/80 hover:bg-white/10 hover:text-white transition"
-                  >
-                    <Download className="size-3.5" />
-                    <span>Export board as JSON</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void handleExportPng()
-                      setShowProfileMenu(false)
-                    }}
-                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-white/80 hover:bg-white/10 hover:text-white transition"
-                  >
-                    <ImageIcon className="size-3.5" />
-                    <span>Export board as PNG</span>
-                  </button>
-                </div>
-              </div>
-            ) : null}
-          </div>
-
-          {/* Quick utility action buttons preserving exact test accessibility */}
+          {/* Quick utility action buttons */}
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
@@ -486,7 +372,15 @@ export function BoardPage() {
 
       {/* Keyboard Shortcuts Modal */}
       {showShortcuts ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-xs p-4">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Keyboard shortcuts"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-xs p-4"
+          onKeyDown={(event) => {
+            if (event.key === "Escape") setShowShortcuts(false)
+          }}
+        >
           <div className="relative w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-border/70 pb-3">
               <div className="flex items-center gap-2">

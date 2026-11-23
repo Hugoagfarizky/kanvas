@@ -15,6 +15,7 @@ import {
   listBoards,
   saveBoard,
   sortBoards,
+  subscribeToBoardChanges,
 } from "@/lib/db"
 import { site } from "@/lib/site"
 import { TEMPLATES } from "@/lib/templates"
@@ -31,6 +32,8 @@ export function DashboardPage() {
   const [creating, setCreating] = useState(false)
   const [query, setQuery] = useState("")
   const [reloadToken, setReloadToken] = useState(0)
+  const [renameTarget, setRenameTarget] = useState<Board | null>(null)
+  const [renameValue, setRenameValue] = useState("")
   const [now, setNow] = useState(() => Date.now())
 
   const searchRef = useRef<HTMLInputElement>(null)
@@ -64,6 +67,13 @@ export function DashboardPage() {
       active = false
     }
   }, [reloadToken])
+
+  useEffect(() => {
+    const unsubscribe = subscribeToBoardChanges(() => {
+      setReloadToken((token) => token + 1)
+    })
+    return () => unsubscribe()
+  }, [])
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 60_000)
@@ -137,19 +147,25 @@ export function DashboardPage() {
     }
   }
 
-  async function handleRename(board: Board) {
-    const nextTitle = window.prompt("Rename board", board.title)
-    if (nextTitle === null) return
+  function handleRename(board: Board) {
+    setRenameTarget(board)
+    setRenameValue(board.title)
+  }
 
-    const trimmed = nextTitle.trim()
-    if (!trimmed || trimmed === board.title) return
+  async function submitRename() {
+    if (!renameTarget) return
+    const trimmed = renameValue.trim()
+    if (!trimmed || trimmed === renameTarget.title) {
+      setRenameTarget(null)
+      return
+    }
 
-    const updated = { ...board, title: trimmed.slice(0, 120), updatedAt: Date.now() }
+    const updated = { ...renameTarget, title: trimmed.slice(0, 120), updatedAt: Date.now() }
 
     try {
       await saveBoard(updated)
       setBoards((current) =>
-        sortBoards((current ?? []).map((item) => (item.id === board.id ? updated : item))),
+        sortBoards((current ?? []).map((item) => (item.id === renameTarget.id ? updated : item))),
       )
       toast({ title: "Board renamed", description: updated.title, tone: "success" })
     } catch {
@@ -158,6 +174,8 @@ export function DashboardPage() {
         description: "Local storage may be unavailable.",
         tone: "error",
       })
+    } finally {
+      setRenameTarget(null)
     }
   }
 
@@ -463,6 +481,27 @@ export function DashboardPage() {
           </div>
         </div>
       </footer>
+      {renameTarget ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-6 shadow-2xl">
+            <h3 className="font-semibold text-sm">Rename board</h3>
+            <input
+              autoFocus
+              value={renameValue}
+              onChange={(event) => setRenameValue(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") void submitRename()
+                if (event.key === "Escape") setRenameTarget(null)
+              }}
+              className="mt-3 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <button type="button" onClick={() => setRenameTarget(null)} className="rounded-xl px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent">Cancel</button>
+              <button type="button" onClick={() => void submitRename()} className="rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">Save</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

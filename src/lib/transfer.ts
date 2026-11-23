@@ -1,4 +1,5 @@
 import { createId } from "@/lib/id"
+import { TEMPLATES } from "@/lib/templates"
 import type {
   EdgeType,
   KanvasEdge,
@@ -14,9 +15,9 @@ const FILE_APP = "kanvas"
 const FILE_VERSION = 1
 const MAX_FILE_BYTES = 10 * 1024 * 1024
 
-const TEMPLATE_IDS: TemplateId[] = ["blank", "brainstorm", "project", "weekly", "retro"]
+const TEMPLATE_IDS: TemplateId[] = ["blank", ...TEMPLATES.map((template) => template.id)]
 const NODE_TYPES = new Set(["note", "text", "task", "shape", "frame", "image"])
-const EDGE_TYPES = new Set<EdgeType>(["bezier", "straight", "step"])
+const EDGE_TYPES = new Set<EdgeType>(["bezier", "straight", "step", "smoothstep"])
 const STROKE_TOOLS = new Set<StrokeTool>(["pen", "highlighter", "eraser"])
 
 export class BoardImportError extends Error {
@@ -118,7 +119,9 @@ export function parseBoardFile(text: string): Board {
     createdAt: asTimestamp(candidate.createdAt, now),
     updatedAt: now,
     viewport: normalizeViewport(candidate.viewport),
-    nodes: Array.isArray(candidate.nodes) ? candidate.nodes.filter(isKanvasNode) : [],
+    nodes: Array.isArray(candidate.nodes)
+      ? candidate.nodes.filter(isKanvasNode).map(normalizeKanvasNode)
+      : [],
     edges: Array.isArray(candidate.edges) ? candidate.edges.filter(isKanvasEdge) : [],
     strokes: Array.isArray(candidate.strokes) ? candidate.strokes.filter(isStroke) : [],
   }
@@ -161,6 +164,42 @@ function isKanvasNode(value: unknown): value is KanvasNode {
     isRecord(value.data) &&
     isNodeStyle(value.style)
   )
+}
+
+function isTaskItem(value: unknown): value is { id: string; text: string; done: boolean } {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.text === "string" &&
+    typeof value.done === "boolean"
+  )
+}
+
+function normalizeKanvasNode(node: KanvasNode): KanvasNode {
+  const data = isRecord(node.data) ? { ...(node.data as Record<string, unknown>) } : {}
+  switch (node.type) {
+    case "task":
+      data.title = typeof data.title === "string" ? data.title : "Tasks"
+      data.items = Array.isArray(data.items) ? data.items.filter(isTaskItem) : []
+      break
+    case "text":
+      data.text = typeof data.text === "string" ? data.text : ""
+      break
+    case "shape":
+      data.kind = typeof data.kind === "string" ? data.kind : "rect"
+      if (typeof data.text !== "string") data.text = ""
+      break
+    case "frame":
+      data.title = typeof data.title === "string" ? data.title : "Frame"
+      break
+    case "image":
+      data.src = typeof data.src === "string" ? data.src : ""
+      data.fit = data.fit === "cover" ? "cover" : "contain"
+      break
+    default:
+      break
+  }
+  return { ...node, data } as KanvasNode
 }
 
 function isKanvasEdge(value: unknown): value is KanvasEdge {

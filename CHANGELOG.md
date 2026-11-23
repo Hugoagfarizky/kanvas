@@ -24,3 +24,16 @@ aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Repositioned the node style inspector away from the MiniMap.
 - Fixed dark mode text readability across Text, Frame, and Task nodes.
 - Enhanced React Flow connector labels and edge styling for light and dark themes.
+
+### Fixed
+
+- Autosave no longer re-runs on every render; idle boards stop writing to IndexedDB.
+- Undo/redo now includes pen strokes and eraser gestures.
+- Connector curve type persists across reloads and imports.
+- Duplicate empty states collapsed into a single one.
+- Template IDs (`dei`, `cardiology`, `uxflow`) survive board import.
+- Per-board IndexedDB storage with automatic migration from the legacy single-array format.
+- Mobile layout no longer overlaps docks, panels, and empty states.
+- Image uploads are downscaled before being stored as base64.
+- Imported task nodes without `items` no longer crash the canvas.
+- Removed non-functional "Dei" chrome (fake profile, nav tabs, bell badge) and hardcoded titles.

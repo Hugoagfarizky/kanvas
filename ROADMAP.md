@@ -96,6 +96,14 @@ progress stays visible in the repository.
 
 Native mobile apps, server-side accounts, paid tiers, and anything that requires uploading a board.
 
+### M1 — Persistence polish ✅
+
+- [x] Per-board IndexedDB storage with index and automatic migration from the legacy single-array format
+- [x] Autosave that does not loop while idle
+- [x] Undo/redo covering pen strokes, eraser, and deletions
+- [x] Import/export round-trip preserving connector types and task data
+- [x] Cross-tab sync via BroadcastChannel
+
 ## Suggesting a change
 
 Open an issue using the feature request template. If it changes this roadmap, say which milestone it

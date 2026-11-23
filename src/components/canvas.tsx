@@ -67,7 +67,7 @@ import "@xyflow/react/dist/style.css"
 
 import { HistoryContext } from "@/components/history-context"
 import { nodeTypes } from "@/components/nodes"
-import type { KanvasNode, NodeStyle, NodeType, Size, TemplateId } from "@/types/board"
+import type { EdgeType, KanvasNode, NodeStyle, NodeType, Size, TemplateId } from "@/types/board"
 import { createId } from "@/lib/id"
 import { useTheme } from "@/lib/theme"
 import { seedDeiLearningPlan, seedCardiologyDynamics, seedUXFlowArchitecture } from "@/lib/templates"
@@ -98,7 +98,7 @@ type CanvasProps = {
     strokes: any[]
   }
   onViewportChange: (viewport: Viewport) => void
-  onPersist: (patch: { nodes: KanvasNode[]; edges: any[]; strokes: any[] }) => void
+  onPersist: (patch: { nodes: KanvasNode[]; edges: any[]; strokes: any[]; templateId?: TemplateId }) => void
 }
 
 const DEFAULT_SIZES: Record<NodeType, Size> = {
@@ -185,7 +185,7 @@ function toFlowEdge(e: CanvasProps["board"]["edges"][number]): Edge {
     source: e.source,
     target: e.target,
     label: e.label,
-    type: isBlue ? "bezier" : "smoothstep",
+    type: e.type ?? (isBlue ? "bezier" : "smoothstep"),
     style: {
       stroke: e.color || "#10b981",
       strokeWidth: 2.5,
@@ -219,7 +219,7 @@ function toKanvasEdge(fe: Edge): any {
     source: fe.source,
     target: fe.target,
     label: typeof fe.label === "string" ? fe.label : undefined,
-    type: fe.type === "straight" ? "straight" : fe.type === "step" ? "step" : "bezier",
+    type: (fe.type as EdgeType | undefined) ?? "smoothstep",
     color: (fe.style as any)?.stroke,
   }
 }
@@ -304,6 +304,8 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
     (board.edges ?? []).map(toFlowEdge),
   )
   const [strokes, setStrokes] = useState<any[]>(() => board.strokes ?? [])
+  const [connectorLabel, setConnectorLabel] = useState<{ edgeId: string; value: string } | null>(null)
+const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "blank")
   const [tool, setTool] = useState<string>("select")
   const [currentStroke, setCurrentStroke] = useState<any | null>(null)
   const [connectSource, setConnectSource] = useState<string | null>(null)
@@ -380,11 +382,13 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
       }
     })
 
-  const isCardio = Boolean(nodes.find((n) => (n.data as any)?.data?.isClinical))
-  const isUX = Boolean(nodes.find((n) => (n.data as any)?.data?.isForm))
+  // (removed unused isCardio/isUX flags)
 
   // Switch between templates (Dei, Cardiology, UX Flow, Blank)
   function loadTemplate(kind: "dei" | "cardiology" | "uxflow" | "blank") {
+    if (nodes.length > 0 || edges.length > 0 || strokes.length > 0) {
+      if (!window.confirm("Replace the current canvas content with this template?")) return
+    }
     pushHistory()
     if (kind === "dei") {
       const dei = seedDeiLearningPlan()
@@ -406,6 +410,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
     setFilterStatus(null)
     setHiddenNodeIds(new Set())
     setLockedNodeIds(new Set())
+    setTemplateId(kind)
     setShowTemplateModal(false)
     setShowQuickAdd(false)
     setTimeout(() => {
@@ -431,35 +436,65 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
 
   const mounted = useRef(false)
   const persistTimer = useRef<number | null>(null)
+  const pendingPersist = useRef<{
+    nodes: KanvasNode[]
+    edges: any[]
+    strokes: any[]
+    templateId?: TemplateId
+  } | null>(null)
+  const hasPendingPersist = useRef(false)
+  const eraserHistoryPushed = useRef(false)
   const history = useRef<{
-    past: { nodes: Node[]; edges: Edge[] }[]
-    future: { nodes: Node[]; edges: Edge[] }[]
+    past: { nodes: Node[]; edges: Edge[]; strokes: any[] }[]
+    future: { nodes: Node[]; edges: Edge[]; strokes: any[] }[]
   }>({ past: [], future: [] })
   const clipboard = useRef<{ nodes: Node[]; edges: Edge[] } | null>(null)
 
   const selectedNodes = nodes.filter((node) => node.selected)
   const selectedEdges = edges.filter((edge) => edge.selected)
+  const isEmpty = nodes.length === 0 && edges.length === 0 && strokes.length === 0
+
+  function cloneStrokes(items: any[]) {
+    return items.map((stroke) => ({
+      ...stroke,
+      points: stroke.points.map((point: number[]) => [...point]),
+    }))
+  }
 
   function pushHistory() {
-    history.current.past.push({ nodes: nodes.map(cloneNode), edges: edges.map(cloneEdge) })
+    history.current.past.push({
+      nodes: nodes.map(cloneNode),
+      edges: edges.map(cloneEdge),
+      strokes: cloneStrokes(strokes),
+    })
     if (history.current.past.length > 50) history.current.past.shift()
     history.current.future = []
   }
 
   function undo() {
     if (!history.current.past.length) return
-    history.current.future.push({ nodes: nodes.map(cloneNode), edges: edges.map(cloneEdge) })
+    history.current.future.push({
+      nodes: nodes.map(cloneNode),
+      edges: edges.map(cloneEdge),
+      strokes: cloneStrokes(strokes),
+    })
     const prev = history.current.past.pop()!
     setNodes(prev.nodes.map(cloneNode))
     setEdges(prev.edges.map(cloneEdge))
+    setStrokes(cloneStrokes(prev.strokes))
   }
 
   function redo() {
     if (!history.current.future.length) return
-    history.current.past.push({ nodes: nodes.map(cloneNode), edges: edges.map(cloneEdge) })
+    history.current.past.push({
+      nodes: nodes.map(cloneNode),
+      edges: edges.map(cloneEdge),
+      strokes: cloneStrokes(strokes),
+    })
     const next = history.current.future.pop()!
     setNodes(next.nodes.map(cloneNode))
     setEdges(next.edges.map(cloneEdge))
+    setStrokes(cloneStrokes(next.strokes))
   }
 
   useEffect(() => {
@@ -477,15 +512,39 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
       return
     }
 
+    hasPendingPersist.current = true
+    pendingPersist.current = {
+      nodes: nodes.map(toKanvasNode),
+      edges: edges.map(toKanvasEdge),
+      strokes,
+      templateId,
+    }
+
     if (persistTimer.current) window.clearTimeout(persistTimer.current)
     persistTimer.current = window.setTimeout(() => {
-      onPersist({ nodes: nodes.map(toKanvasNode), edges: edges.map(toKanvasEdge), strokes })
+      persistTimer.current = null
+      hasPendingPersist.current = false
+      if (pendingPersist.current) onPersist(pendingPersist.current)
     }, 400)
 
     return () => {
       if (persistTimer.current) window.clearTimeout(persistTimer.current)
     }
   }, [nodes, edges, strokes, onPersist])
+
+  // Flush the debounced autosave when the canvas unmounts so the last edit is not lost.
+  useEffect(() => {
+    return () => {
+      if (persistTimer.current) {
+        window.clearTimeout(persistTimer.current)
+        persistTimer.current = null
+      }
+      if (hasPendingPersist.current && pendingPersist.current) {
+        hasPendingPersist.current = false
+        onPersist(pendingPersist.current)
+      }
+    }
+  }, [onPersist])
 
   const handleNodesChange = useCallback((changes: any) => {
     setNodes((current) => applyNodeChanges(current, changes))
@@ -518,6 +577,14 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
         const width = Math.max(140, Math.round(img.naturalWidth * scale))
         const height = Math.max(100, Math.round(img.naturalHeight * scale))
 
+        // Downscale the source image before storing it as base64.
+        const canvasEl = document.createElement("canvas")
+        canvasEl.width = width
+        canvasEl.height = height
+        const ctx = canvasEl.getContext("2d")
+        ctx?.drawImage(img, 0, 0, width, height)
+        const storedSrc = canvasEl.toDataURL("image/png")
+
         const targetPos =
           flowPos ??
           reactFlow.screenToFlowPosition({
@@ -536,7 +603,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
           style: { width, height },
           data: {
             kind: "image",
-            data: { src, alt: file.name, fit: "contain" },
+            data: { src: storedSrc, alt: file.name, fit: "contain" },
             style: defaultStyles.image,
             size: { width, height },
             rotation: 0,
@@ -899,6 +966,10 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
     if (!isDrawingTool(tool)) return
     const pos = reactFlow.screenToFlowPosition({ x: event.clientX, y: event.clientY })
     if (tool === "eraser") {
+      if (!eraserHistoryPushed.current) {
+        pushHistory()
+        eraserHistoryPushed.current = true
+      }
       eraseAt([pos.x, pos.y, 0.5])
       setIsDrawing(true)
       return
@@ -939,7 +1010,11 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
   function handlePointerUp() {
     if (!isDrawing) return
     setIsDrawing(false)
-    if (tool !== "eraser" && currentStroke) {
+    if (tool === "eraser") {
+      eraserHistoryPushed.current = false
+      return
+    }
+    if (currentStroke) {
       pushHistory()
       setStrokes((prev) => [...prev, currentStroke])
       setCurrentStroke(null)
@@ -981,10 +1056,16 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
     }
   }
 
-  const isEmpty = nodes.length === 0 && edges.length === 0 && strokes.length === 0
+  const lastHistoryPushRef = useRef(0)
+  const coalescedHistoryPush = useCallback(() => {
+    const now = Date.now()
+    if (now - lastHistoryPushRef.current < 400) return
+    lastHistoryPushRef.current = now
+    pushHistory()
+  }, [pushHistory])
 
   return (
-    <HistoryContext.Provider value={{ push: pushHistory }}>
+    <HistoryContext.Provider value={{ push: coalescedHistoryPush }}>
       <div
         className="absolute inset-0 select-none overflow-hidden flex flex-col"
         onDragOver={handleCanvasDragOver}
@@ -1005,17 +1086,11 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
         />
 
         {/* Top Header Section matching Dei reference seamlessly */}
-        <div className="flex h-16 shrink-0 items-center justify-between px-8 z-30 select-none bg-background">
+        <div className="hidden md:flex h-16 shrink-0 items-center justify-between px-8 z-30 select-none bg-background">
           {/* Left Title */}
           <div className="flex items-center gap-2">
             <h2 className="font-sans text-2xl font-black tracking-tight text-foreground">
-              {isCardio
-                ? "Cardiology Dynamics"
-                : isUX
-                  ? "UX Architecture"
-                  : board.templateId === "blank" || nodes.length === 0
-                    ? board.title || "Blank Canvas"
-                    : "My Learning Plan"}
+              {board.title || "Workspace"}
             </h2>
           </div>
 
@@ -1111,19 +1186,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
             </button>
           </div>
 
-          {/* Right Title */}
-          <div className="flex items-center gap-2">
-            <h2 className="font-sans text-2xl font-black tracking-tight text-foreground">
-              {isCardio
-                ? "Patient Vitals"
-                : isUX
-                  ? "Signup Flow"
-                  : board.templateId === "blank" || nodes.length === 0
-                    ? "Workspace"
-                    : "My Events"}
-            </h2>
           </div>
-        </div>
 
         {/* Canvas Workspace containing ReactFlow and floating controls */}
         <div className="relative flex-1 min-h-0 overflow-hidden">
@@ -1134,15 +1197,10 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
             onNodesChange={handleNodesChange}
             onEdgesChange={handleEdgesChange}
             onEdgeDoubleClick={(_event, edge) => {
-              const label = window.prompt(
-                "Connector label",
-                typeof edge.label === "string" ? edge.label : "",
-              )
-              if (label === null) return
-              pushHistory()
-              setEdges((current) =>
-                current.map((item) => (item.id === edge.id ? { ...item, label } : item)),
-              )
+              setConnectorLabel({
+                edgeId: edge.id,
+                value: typeof edge.label === "string" ? edge.label : "",
+              })
             }}
             onConnect={(connection) => {
               pushHistory()
@@ -1235,58 +1293,6 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
             </ViewportPortal>
           </ReactFlow>
 
-          {/* Empty Canvas Friendly Starter Prompt */}
-          {nodes.length === 0 ? (
-            <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center select-none">
-              <div className="pointer-events-auto flex flex-col items-center rounded-3xl border border-border/80 bg-card/90 p-8 text-center shadow-2xl backdrop-blur-xl max-w-sm mx-4 animate-in fade-in zoom-in-95 duration-200">
-                <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-3 shadow-inner">
-                  <Sparkles className="size-7" />
-                </div>
-                <h3 className="font-sans text-lg font-bold text-foreground">
-                  Empty Canvas
-                </h3>
-                <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
-                  Start creating by selecting a tool from the dock below, or pick a starter template.
-                </p>
-                <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      addNode(
-                        "note",
-                        {
-                          title: "New Roadmap Objective",
-                          subtitle: "Define core principles and key medical competencies.",
-                          status: "Upcoming",
-                          badgeIcon: "+",
-                        },
-                        { fill: "#ffffff", stroke: "#e2e8f0", text: "#0f172a" },
-                        { width: 290, height: 165 },
-                      )
-                    }
-                    className="rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-sm transition hover:scale-105 active:scale-95"
-                  >
-                    Add Roadmap Step
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => addNode("text")}
-                    className="rounded-full border border-border bg-secondary/80 px-4 py-2 text-xs font-semibold text-foreground transition hover:bg-secondary active:scale-95"
-                  >
-                    Add Text (T)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowTemplateModal(true)}
-                    className="rounded-full border border-border bg-secondary/80 px-4 py-2 text-xs font-semibold text-foreground transition hover:bg-secondary active:scale-95"
-                  >
-                    Browse Templates
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : null}
-
           {/* Canvas Drag-and-Drop Overlay */}
           {isCanvasDragOver ? (
             <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-primary/10 backdrop-blur-xs">
@@ -1303,7 +1309,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
           ) : null}
 
           {/* Left Floating Dock: Vertical Black Pill matching Dei reference */}
-          <div className="fixed left-5 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-2.5 rounded-full border border-white/10 bg-[#0f1115] p-2 text-white shadow-2xl backdrop-blur-xl ring-1 ring-black/40 select-none">
+          <div className="hidden md:flex fixed left-5 top-1/2 -translate-y-1/2 z-40 flex-col items-center gap-2.5 rounded-full border border-white/10 bg-[#0f1115] p-2 text-white shadow-2xl backdrop-blur-xl ring-1 ring-black/40 select-none">
             {/* Top Badge: Total items counter */}
             <div
               className="flex size-8 items-center justify-center rounded-full bg-white/15 text-xs font-bold text-white shadow-xs"
@@ -1351,7 +1357,6 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
               title="Activity & Notifications (29)"
             >
               <Bell className="size-4 text-amber-300" />
-              <span className="text-[10px] font-bold text-white/90">29</span>
             </button>
 
             {/* Zoom In (+) */}
@@ -1377,7 +1382,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
 
           {/* Floating Layers Panel matching Reference 2 */}
           {showLayers ? (
-            <div className="fixed left-20 top-1/2 -translate-y-1/2 z-50 w-80 rounded-3xl border border-white/15 bg-[#161922] p-4 text-white shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-left-3 duration-150">
+            <div className="hidden md:block fixed left-20 top-1/2 -translate-y-1/2 z-50 w-80 rounded-3xl border border-white/15 bg-[#161922] p-4 text-white shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-left-3 duration-150">
               <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
                 <div className="flex items-center gap-2">
                   <Layers className="size-4 text-emerald-400" />
@@ -1486,7 +1491,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
           ) : null}
 
           {/* Bottom Sculpted Dark Dock matching Dei reference */}
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2.5 rounded-full border border-white/10 bg-[#0f1115] px-4 py-2.5 text-white shadow-2xl backdrop-blur-xl ring-1 ring-black/40 select-none">
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex max-w-[calc(100vw-1.5rem)] items-center gap-2 overflow-x-auto rounded-full border border-white/10 bg-[#0f1115] px-4 py-2.5 text-white shadow-2xl backdrop-blur-xl ring-1 ring-black/40 select-none">
             {/* Button 1: T (Lilac Circle - Text) */}
             <button
               type="button"
@@ -2206,7 +2211,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
 
           {/* Style Panel (Node Inspector) - Positioned top-20 right-6 */}
           {selectedNodes.length === 1 ? (
-            <div className="fixed right-6 top-20 z-40 w-76 rounded-3xl border border-border/80 bg-card/95 p-4.5 shadow-2xl backdrop-blur-xl ring-1 ring-border/20 animate-in fade-in slide-in-from-right-3 duration-150">
+            <div className="fixed right-4 top-16 z-40 w-[calc(100vw-2rem)] max-w-76 rounded-3xl border border-border/80 bg-card/95 p-4.5 shadow-2xl backdrop-blur-xl ring-1 ring-border/20 animate-in fade-in slide-in-from-right-3 duration-150 sm:right-6 sm:top-20">
               {/* Inspector Header */}
               <div className="mb-3.5 flex items-center justify-between border-b border-border/60 pb-2.5">
                 <div className="flex items-center gap-1.5">
@@ -2448,7 +2453,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
 
           {/* Connector / Edge Inspector - Positioned top-20 right-6 */}
           {selectedEdges.length === 1 && selectedNodes.length === 0 ? (
-            <div className="fixed right-6 top-20 z-40 w-76 rounded-3xl border border-border/80 bg-card/95 p-4.5 shadow-2xl backdrop-blur-xl ring-1 ring-border/20 animate-in fade-in slide-in-from-right-3 duration-150">
+            <div className="fixed right-4 top-16 z-40 w-[calc(100vw-2rem)] max-w-76 rounded-3xl border border-border/80 bg-card/95 p-4.5 shadow-2xl backdrop-blur-xl ring-1 ring-border/20 animate-in fade-in slide-in-from-right-3 duration-150 sm:right-6 sm:top-20">
               {/* Inspector Header */}
               <div className="mb-3.5 flex items-center justify-between border-b border-border/60 pb-2.5">
                 <div className="flex items-center gap-1.5">
@@ -2686,6 +2691,37 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
                     <Sparkles className="size-4" />
                     <span>Load Dei Learning Plan Demo</span>
                   </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+          {connectorLabel ? (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-xs p-4">
+              <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-6 shadow-2xl">
+                <h3 className="font-semibold text-sm">Connector label</h3>
+                <input
+                  autoFocus
+                  value={connectorLabel.value}
+                  onChange={(event) =>
+                    setConnectorLabel({ ...connectorLabel, value: event.target.value })
+                  }
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      pushHistory()
+                      setEdges((current) =>
+                        current.map((item) =>
+                          item.id === connectorLabel.edgeId ? { ...item, label: connectorLabel.value } : item,
+                        ),
+                      )
+                      setConnectorLabel(null)
+                    }
+                    if (event.key === "Escape") setConnectorLabel(null)
+                  }}
+                  className="mt-3 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                />
+                <div className="mt-4 flex justify-end gap-2">
+                  <button type="button" onClick={() => setConnectorLabel(null)} className="rounded-xl px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent">Cancel</button>
+                  <button type="button" onClick={() => { pushHistory(); setEdges((current) => current.map((item) => item.id === connectorLabel.edgeId ? { ...item, label: connectorLabel.value } : item)); setConnectorLabel(null) }} className="rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">Save</button>
                 </div>
               </div>
             </div>

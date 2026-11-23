@@ -79,8 +79,8 @@ Kanvas provides an infinite creative surface for brainstorming, sketching, plann
 - **Template & View Switcher (`⊞`)**:
   - Instantly load **Dei Learning Plan**, **Cardiology Dynamics**, **UX Architecture Flow**, or **Clean Canvas**.
   - Canvas grid background switcher (`Dots`, `Lines`, `Clean`).
-- **Activity & Reminders Modal (`🔔 29`)**:
-  - 29 interactive upcoming activities and milestones with direct **Focus** jump buttons.
+- **Activity & Reminders Modal (`🔔`)**:
+  - Upcoming activities and milestones with direct **Focus** jump buttons.
   - Keyboard shortcuts reference guide.
 - **Smooth Zoom Controls**:
   - Quick `+` and `-` zoom steps.
@@ -117,8 +117,8 @@ templates).
 | UI           | React 19, TypeScript, Tailwind CSS v4, shadcn/ui conventions                                                |
 | Build        | Vite                                                                                                        |
 | Canvas (M1+) | [React Flow](https://reactflow.dev) and [perfect-freehand](https://github.com/steveruizok/perfect-freehand) |
-| State (M1+)  | Zustand                                                                                                     |
-| Storage      | IndexedDB via `idb-keyval`                                                                                  |
+| State (M1+)  | React hooks + refs (no external state library)                                             |
+| Storage      | IndexedDB via `idb-keyval` (one record per board + index)                                 |
 | Tests        | Vitest, Testing Library, Playwright                                                                         |
 | Hosting      | GitHub Pages (static, free)                                                                                 |
 

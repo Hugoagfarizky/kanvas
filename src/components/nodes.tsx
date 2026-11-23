@@ -1581,6 +1581,7 @@ export function FrameNode({ id, data, selected }: NodeProps) {
 export function ImageNode({ id, data, selected }: NodeProps) {
   const d = data as KanvasNodeData
   const update = useNodeUpdater(id)
+  const { setNodes } = useReactFlow()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragOver, setIsDragOver] = useState(false)
   const fitMode = d.data?.fit ?? "contain"
@@ -1599,10 +1600,34 @@ export function ImageNode({ id, data, selected }: NodeProps) {
         const width = Math.max(140, Math.round(img.naturalWidth * scale))
         const height = Math.max(100, Math.round(img.naturalHeight * scale))
 
+        const canvasEl = document.createElement("canvas")
+        canvasEl.width = width
+        canvasEl.height = height
+        const ctx = canvasEl.getContext("2d")
+        ctx?.drawImage(img, 0, 0, width, height)
+        const storedSrc = canvasEl.toDataURL("image/png")
+
         update({
           size: { width, height },
-          data: { ...d.data, src, alt: file.name, fit: "contain" },
+          data: { ...d.data, src: storedSrc, alt: file.name, fit: "contain" },
         })
+        setNodes((nodes) =>
+          nodes.map((node) =>
+            node.id === id
+              ? {
+                  ...node,
+                  width,
+                  height,
+                  style: { ...(node.style ?? {}), width, height },
+                  data: {
+                    ...(node.data as any),
+                    size: { width, height },
+                    data: { ...(node.data as any)?.data, src: storedSrc, alt: file.name, fit: "contain" },
+                  },
+                }
+              : node,
+          ),
+        )
       }
       img.src = src
     }

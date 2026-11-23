@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test"
 
 async function createBoard(page: Page) {
-  await page.getByRole("button", { name: "Start a board" }).click()
+  await page.getByRole("button", { name: "Start a blank board" }).click()
   await expect(page).toHaveURL(/board\//)
   return page.getByRole("textbox", { name: "Board title" })
 }
