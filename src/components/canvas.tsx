@@ -306,6 +306,7 @@ function BoardCanvasInner({ board, onViewportChange, onPersist }: CanvasProps) {
     (board.edges ?? []).map(toFlowEdge),
   )
   const [strokes, setStrokes] = useState<any[]>(() => board.strokes ?? [])
+  const [historyTick, setHistoryTick] = useState(0)
   const [pendingTemplate, setPendingTemplate] = useState<"dei" | "cardiology" | "uxflow" | "blank" | null>(null)
   const [connectorLabel, setConnectorLabel] = useState<{ edgeId: string; value: string } | null>(null)
 const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "blank")
@@ -485,6 +486,7 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
     })
     if (history.current.past.length > 50) history.current.past.shift()
     history.current.future = []
+    setHistoryTick((t) => t + 1)
   }
 
   function undo() {
@@ -498,6 +500,7 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
     setNodes(prev.nodes.map(cloneNode))
     setEdges(prev.edges.map(cloneEdge))
     setStrokes(cloneStrokes(prev.strokes))
+    setHistoryTick((t) => t + 1)
   }
 
   function redo() {
@@ -511,6 +514,7 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
     setNodes(next.nodes.map(cloneNode))
     setEdges(next.edges.map(cloneEdge))
     setStrokes(cloneStrokes(next.strokes))
+    setHistoryTick((t) => t + 1)
   }
 
   useEffect(() => {
@@ -1512,9 +1516,11 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
             <button
               type="button"
               onClick={() => undo()}
-              className="flex size-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:scale-110 active:scale-95"
+              disabled={history.current.past.length === 0}
+              className="flex size-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:scale-110 active:scale-95 disabled:opacity-40"
               title="Undo (Ctrl+Z)"
               aria-label="Undo"
+              data-history-tick={historyTick}
             >
               <Undo2 className="size-4" />
             </button>
@@ -1522,7 +1528,8 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
             <button
               type="button"
               onClick={() => redo()}
-              className="flex size-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:scale-110 active:scale-95"
+              disabled={history.current.future.length === 0}
+              className="flex size-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:scale-110 active:scale-95 disabled:opacity-40"
               title="Redo (Ctrl+Y)"
               aria-label="Redo"
             >
