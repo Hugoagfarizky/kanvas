@@ -370,6 +370,8 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
 
       const active = matchSearch && matchFilter
 
+      if (searchQuery.trim() && !matchSearch) return null
+
       return {
         ...n,
         draggable: !isLocked,
@@ -384,6 +386,12 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
         },
       }
     })
+    .filter((n): n is NonNullable<typeof n> => n !== null)
+
+  const displayedNodeIds = new Set(displayedNodes.map((n) => n.id))
+  const displayedEdges = edges.filter(
+    (e) => displayedNodeIds.has(e.source) && displayedNodeIds.has(e.target),
+  )
 
   // (removed unused isCardio/isUX flags)
 
@@ -1200,7 +1208,7 @@ const [templateId, setTemplateId] = useState<TemplateId>(board.templateId ?? "bl
         <div className="relative flex-1 min-h-0 overflow-hidden">
           <ReactFlow
             nodes={displayedNodes}
-            edges={edges}
+            edges={displayedEdges}
             nodeTypes={nodeTypes}
             onNodesChange={handleNodesChange}
             onEdgesChange={handleEdgesChange}
